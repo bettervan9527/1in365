@@ -40,6 +40,31 @@
             --border-subtle: #1e1e1e;
         }
 
+        .light-mode {
+            --color-green: #3ecf8e;
+            --color-green-link: #00c573;
+            --color-green-border: rgba(62, 207, 142, 0.35);
+            --color-near-black: #111827;
+            --color-dark: #1f2937;
+            --color-dark-border: #d1d5db;
+            --color-border-dark: #e5e7eb;
+            --color-mid-border: #e5e7eb;
+            --color-border-light: #f3f4f6;
+            --color-mid-gray: #9ca3af;
+            --color-light-gray: #d1d5db;
+            --color-near-white: #f3f4f6;
+            --color-off-white: #f9fafb;
+            --bg-page: #f3f4f6;
+            --bg-card: #ffffff;
+            --bg-input: #f0f1f3;
+            --bg-surface: #f9fafb;
+            --text-primary: #1f2937;
+            --text-secondary: #4b5563;
+            --text-muted: #9ca3af;
+            --border-color: #e5e7eb;
+            --border-subtle: #f3f4f6;
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
@@ -68,9 +93,31 @@
         }
 
         .header {
+            position: relative;
             padding: 32px 24px 28px;
             text-align: center;
             border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: 16px;
+            right: 20px;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            border-radius: 9999px;
+            padding: 6px 10px;
+            cursor: pointer;
+            font-size: 16px;
+            line-height: 1;
+            color: var(--text-muted);
+            transition: border-color 0.2s, color 0.2s;
+            font-family: var(--font-primary);
+        }
+
+        .theme-toggle:hover {
+            border-color: var(--text-secondary);
+            color: var(--text-secondary);
         }
 
         .header .emoji {
@@ -596,6 +643,7 @@
 
         <div class="card">
             <div class="header">
+                <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="切换主题">🌙</button>
                 <div class="emoji">🎂</div>
                 <div class="label">Douyin Comment Analyzer</div>
                 <h1>抖音评论生日分析器</h1>
@@ -1049,6 +1097,20 @@
             document.getElementById('tab-' + tabId).classList.add('active');
             btn.classList.add('active');
         }
+
+        function toggleTheme() {
+            const isLight = document.body.classList.toggle('light-mode');
+            document.getElementById('themeToggle').textContent = isLight ? '☀️' : '🌙';
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+        }
+
+        (function initTheme() {
+            const saved = localStorage.getItem('theme');
+            if (saved === 'light') {
+                document.body.classList.add('light-mode');
+                document.getElementById('themeToggle').textContent = '☀️';
+            }
+        })();
     </script>
 </body>
 </html>
