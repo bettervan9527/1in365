@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生日相同概率计算器</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 12px;
+        }
+
+        .container {
+            max-width: 920px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+            margin-bottom: 24px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 28px 20px 22px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .header p {
+            font-size: 13px;
+            opacity: 0.9;
+            line-height: 1.5;
+        }
+
+        .body-content {
+            padding: 20px 16px 24px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+
+        .input-group label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #374151;
+            white-space: nowrap;
+        }
+
+        .input-group input[type="number"] {
+            padding: 9px 14px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 15px;
+            outline: none;
+            transition: border-color 0.2s;
+            width: 120px;
+        }
+
+        .input-group input[type="number"]:focus {
+            border-color: #667eea;
+        }
+
+        .input-group input.year-input {
+            width: 85px;
+        }
+
+        .input-group .range-sep {
+            font-size: 16px;
+            color: #9ca3af;
+            font-weight: 600;
+        }
+
+        .input-group button {
+            padding: 9px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+
+        .input-group button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .input-group button:active {
+            transform: translateY(0);
+        }
+
+        .input-row {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 18px;
+        }
+
+        .input-row .field-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .input-row .field-group label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #374151;
+            white-space: nowrap;
+        }
+
+        .input-row .field-group input {
+            padding: 7px 10px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+            width: 80px;
+        }
+
+        .input-row .field-group input:focus {
+            border-color: #667eea;
+        }
+
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 10px 16px;
+            background: #f9fafb;
+            border-radius: 10px;
+            border: 1px solid #f3f4f6;
+        }
+
+        .toggle-row .toggle-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .toggle-row .toggle-hint {
+            font-size: 12px;
+            color: #6b7280;
+            margin-left: auto;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 48px;
+            height: 26px;
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            inset: 0;
+            background: #d1d5db;
+            border-radius: 26px;
+            transition: background 0.25s;
+        }
+
+        .toggle-slider::before {
+            content: '';
+            position: absolute;
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.25s;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background: #667eea;
+        }
+
+        .toggle-switch input:checked + .toggle-slider::before {
+            transform: translateX(22px);
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .result-item {
+            background: #f9fafb;
+            border-radius: 12px;
+            padding: 16px 12px;
+            text-align: center;
+            border: 1px solid #f3f4f6;
+        }
+
+        .result-item .label {
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 5px;
+            line-height: 1.5;
+        }
+
+        .result-item .value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1f2937;
+            transition: color 0.3s;
+        }
+
+        .result-item .value.color-md {
+            color: #667eea;
+        }
+
+        .result-item .value.color-ymd {
+            color: #ef4444;
+        }
+
+        .result-item .value.color-paradox {
+            color: #f59e0b;
+        }
+
+        .result-item .sub {
+            font-size: 11px;
+            color: #9ca3af;
+            margin-top: 3px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 340px;
+            margin-bottom: 20px;
+        }
+
+        .chart-container.tall {
+            height: 380px;
+        }
+
+        .chart-container.short {
+            height: 280px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-title .badge {
+            font-size: 11px;
+            font-weight: 500;
+            background: #667eea;
+            color: white;
+            padding: 2px 10px;
+            border-radius: 20px;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        table th {
+            background: #f3f4f6;
+            text-align: left;
+            padding: 9px 12px;
+            font-weight: 600;
+            color: #374151;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        table td {
+            padding: 9px 12px;
+            border-bottom: 1px solid #f3f4f6;
+            color: #4b5563;
+        }
+
+        table tr:hover td {
+            background: #f9fafb;
+        }
+
+        .note-box {
+            background: #eff6ff;
+            border-left: 4px solid #667eea;
+            border-radius: 8px;
+            padding: 14px 18px;
+            font-size: 13px;
+            color: #1e40af;
+            line-height: 1.7;
+            margin-top: 18px;
+        }
+
+        .note-box strong {
+            font-weight: 700;
+        }
+
+        .tab-bar {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 12px;
+            background: #f3f4f6;
+            border-radius: 10px;
+            padding: 4px;
+        }
+
+        .tab-bar button {
+            flex: 1;
+            padding: 7px 14px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #6b7280;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tab-bar button.active {
+            background: white;
+            color: #667eea;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+        }
+
+        .tab-panel {
+            display: none;
+        }
+
+        .tab-panel.active {
+            display: block;
+        }
+
+        .footer {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 12px;
+            padding: 14px 0 6px;
+        }
+
+        @media (max-width: 640px) {
+            body {
+                padding: 8px;
+            }
+
+            .header h1 {
+                font-size: 20px;
+            }
+
+            .header p {
+                font-size: 12px;
+            }
+
+            .body-content {
+                padding: 16px 12px 20px;
+            }
+
+            .results-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .result-item {
+                padding: 12px 10px;
+            }
+
+            .result-item .value {
+                font-size: 24px;
+            }
+
+            .input-group {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 8px;
+            }
+
+            .input-group label {
+                font-size: 13px;
+            }
+
+            .input-group input[type="number"] {
+                width: 100%;
+            }
+
+            .input-row {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+
+            .input-row .field-group {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .toggle-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+                padding: 10px 12px;
+            }
+
+            .toggle-row .toggle-hint {
+                margin-left: 0;
+            }
+
+            .chart-container {
+                height: 280px;
+            }
+
+            .chart-container.tall {
+                height: 300px;
+            }
+
+            .chart-container.short {
+                height: 240px;
+            }
+
+            .section-title {
+                font-size: 14px;
+            }
+
+            .tab-bar button {
+                padding: 6px 10px;
+                font-size: 12px;
+            }
+
+            table {
+                font-size: 12px;
+            }
+
+            table th, table td {
+                padding: 7px 8px;
+            }
+
+            .note-box {
+                font-size: 12px;
+                padding: 12px 14px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header {
+                padding: 20px 14px 18px;
+            }
+
+            .header h1 {
+                font-size: 18px;
+            }
+
+            .tab-bar {
+                flex-direction: column;
+                gap: 2px;
+            }
+
+            .tab-bar button {
+                width: 100%;
+            }
+
+            .chart-container {
+                height: 240px;
+            }
+
+            .chart-container.tall {
+                height: 260px;
+            }
+
+            .chart-container.short {
+                height: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+
+        <div class="card">
+            <div class="header">
+                <h1>生日相同概率计算器</h1>
+                <p>在评论区中，找到与自己出生<strong>月·日（不限年份）</strong> 或 <strong>年·月·日（完全一致）</strong>的人，概率有多大？</p>
+            </div>
+            <div class="body-content">
+
+                <div class="input-group">
+                    <label for="peopleInput">评论区人数：</label>
+                    <input type="number" id="peopleInput" min="1" max="1000000" value="366">
+                    <button onclick="calculate()">计算</button>
+                </div>
+
+                <div class="input-row">
+                    <div class="field-group">
+                        <label for="yearStart">出生年份范围：</label>
+                        <input type="number" class="year-input" id="yearStart" min="1900" max="2030" value="1996">
+                        <span class="range-sep">—</span>
+                        <input type="number" class="year-input" id="yearEnd" min="1900" max="2030" value="2010">
+                    </div>
+                </div>
+
+                <div class="toggle-row">
+                    <span class="toggle-label">考虑闰年闰月</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="leapToggle" checked onchange="calculate()">
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <span class="toggle-hint" id="toggleHint">2月29日概率 1/1461</span>
+                </div>
+
+                <div class="results-grid">
+                    <div class="result-item">
+                        <div class="label">与你生日（月/日）相同<br><span style="font-size:11px;color:#9ca3af">不限年份</span></div>
+                        <div class="value color-md" id="exactMatch">—</div>
+                        <div class="sub" id="exactSub">平均约 1/365.24</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="label">与你同年同月同日<br><span style="font-size:11px;color:#9ca3af" id="ymdRangeLabel">年份 1990-2010</span></div>
+                        <div class="value color-ymd" id="ymdMatch">—</div>
+                        <div class="sub" id="ymdSub">包含闰年天数</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="label">任意两人生日相同<br><span style="font-size:11px;color:#9ca3af">生日悖论</span></div>
+                        <div class="value color-paradox" id="paradox">—</div>
+                        <div class="sub" id="paradoxSub">23 人 &gt;50%</div>
+                    </div>
+                </div>
+
+                <div class="section-title">
+                    <span>概率分布图像</span>
+                    <span class="badge">交互式</span>
+                </div>
+
+                <div class="tab-bar">
+                    <button class="active" onclick="switchTab('exact', this)">月/日匹配分布</button>
+                    <button onclick="switchTab('compare', this)">综合对比</button>
+                </div>
+
+                <div class="tab-panel active" id="tab-exact">
+                    <div class="chart-container tall">
+                        <canvas id="exactChart"></canvas>
+                    </div>
+                </div>
+                <div class="tab-panel" id="tab-compare">
+                    <div class="chart-container">
+                        <canvas id="compareChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="section-title" style="margin-top: 4px;">
+                    <span>达到 50% / 90% / 99% 概率所需人数</span>
+                </div>
+
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>目标概率</th>
+                                <th>月/日匹配</th>
+                                <th>同年同月同日</th>
+                                <th>生日悖论</th>
+                            </tr>
+                        </thead>
+                        <tbody id="neededTable">
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="section-title" style="margin-top: 4px;">
+                    <span>月份出生率分布</span>
+                    <span class="badge" style="background: #10b981;">参考数据</span>
+                </div>
+
+                <div class="chart-container short">
+                    <canvas id="birthRateChart"></canvas>
+                </div>
+
+                <div class="note-box">
+                    <strong>说明：</strong><br>
+                    • <strong>月/日匹配</strong>：找到与你出生<strong>月·日</strong>（不限年份）完全相同的人。<br>
+                    • <strong>同年同月同日</strong>：找到与你出生<strong>年·月·日</strong>完全一致的人。概率取决于设定的年份范围。<br>
+                    • <strong>生日悖论</strong>：任意两人生日（月·日）相同。仅需 23 人概率即超过 50%。<br>
+                    • <strong>闰年处理</strong>：2 月 29 日概率 1/1461，其他日期 4/1461。平均 = 1/4×1/366 + 3/4×1/365 ≈ 1/365.2425
+                </div>
+
+            </div>
+        </div>
+
+        <div class="footer">
+            生日概率计算器 &mdash; 数据驱动，科学计算
+        </div>
+
+    </div>
+
+    <script>
+        let exactChartInstance = null;
+        let compareChartInstance = null;
+        let birthRateChartInstance = null;
+
+        function isLeapOn() {
+            return document.getElementById('leapToggle').checked;
+        }
+
+        function getYearRange() {
+            const y1 = parseInt(document.getElementById('yearStart').value, 10) || 1996;
+            const y2 = parseInt(document.getElementById('yearEnd').value, 10) || 2010;
+            if (y1 > y2) return { start: y2, end: y1 };
+            return { start: y1, end: y2 };
+        }
+
+        function isLeapYear(y) {
+            return (y % 400 === 0) || (y % 4 === 0 && y % 100 !== 0);
+        }
+
+        function countTotalDays(start, end, respectLeap) {
+            let total = 0;
+            for (let y = start; y <= end; y++) {
+                total += (respectLeap && isLeapYear(y)) ? 366 : 365;
+            }
+            return total;
+        }
+
+        function calculateExactMatchProb(n, considerLeap) {
+            let avgProb;
+            if (considerLeap) {
+                const pLeap = 0.25;
+                avgProb = pLeap * (1 / 366) + (1 - pLeap) * (1 / 365);
+            } else {
+                avgProb = 1 / 365;
+            }
+            return 1 - Math.pow(1 - avgProb, n - 1);
+        }
+
+        function calculateYmdMatchProb(n, start, end, considerLeap) {
+            const totalDays = countTotalDays(start, end, considerLeap);
+            if (totalDays === 0) return 0;
+            const avgProb = 1 / totalDays;
+            return 1 - Math.pow(1 - avgProb, n - 1);
+        }
+
+        function calculateParadoxProb(n, considerLeap) {
+            const days = considerLeap ? 365.2425 : 365;
+            if (n >= days) return 1;
+            let probNoMatch = 1;
+            for (let i = 0; i < n; i++) {
+                probNoMatch *= (days - i) / days;
+            }
+            return 1 - probNoMatch;
+        }
+
+        function calcNeededMonthDay(targetProb, considerLeap) {
+            let n = 1;
+            const maxN = 1000000;
+            while (n <= maxN) {
+                if (calculateExactMatchProb(n, considerLeap) >= targetProb) return n;
+                n++;
+            }
+            return null;
+        }
+
+        function calcNeededYmd(targetProb, start, end, considerLeap) {
+            let n = 1;
+            const maxN = 2000000;
+            while (n <= maxN) {
+                if (calculateYmdMatchProb(n, start, end, considerLeap) >= targetProb) return n;
+                n++;
+            }
+            return null;
+        }
+
+        function calcNeededParadox(targetProb, considerLeap) {
+            let n = 1;
+            const maxN = 100000;
+            while (n <= maxN) {
+                if (calculateParadoxProb(n, considerLeap) >= targetProb) return n;
+                n++;
+            }
+            return null;
+        }
+
+        function formatPct(value) {
+            return (value * 100).toFixed(2) + '%';
+        }
+
+        function getMonthDayCurveData(maxN, considerLeap) {
+            const labels = [];
+            const data = [];
+            for (let n = 1; n <= maxN; n++) {
+                labels.push(n);
+                data.push(calculateExactMatchProb(n, considerLeap) * 100);
+            }
+            return { labels, data };
+        }
+
+        function getYmdCurveData(maxN, start, end, considerLeap) {
+            const data = [];
+            for (let n = 1; n <= maxN; n++) {
+                data.push(calculateYmdMatchProb(n, start, end, considerLeap) * 100);
+            }
+            return data;
+        }
+
+        function getParadoxCurveData(maxN, considerLeap) {
+            const data = [];
+            for (let n = 1; n <= maxN; n++) {
+                data.push(calculateParadoxProb(n, considerLeap) * 100);
+            }
+            return data;
+        }
+
+        function buildExactChart() {
+            const leapOn = isLeapOn();
+            const maxN = 500;
+            const leapData = getMonthDayCurveData(maxN, true);
+            const nonLeapData = getMonthDayCurveData(maxN, false);
+
+            const ctx = document.getElementById('exactChart').getContext('2d');
+
+            if (exactChartInstance) exactChartInstance.destroy();
+
+            exactChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: leapData.labels,
+                    datasets: [
+                        {
+                            label: '考虑闰年' + (leapOn ? ' ✓' : ''),
+                            data: leapData.data,
+                            borderColor: '#667eea',
+                            borderWidth: leapOn ? 3 : 1.5,
+                            borderDash: leapOn ? [] : [4, 4],
+                            pointRadius: 0,
+                            tension: 0.4,
+                            fill: false,
+                        },
+                        {
+                            label: '不考虑闰年' + (!leapOn ? ' ✓' : ''),
+                            data: nonLeapData.data,
+                            borderColor: '#10b981',
+                            borderWidth: !leapOn ? 3 : 1.5,
+                            borderDash: !leapOn ? [] : [4, 4],
+                            pointRadius: 0,
+                            tension: 0.4,
+                            fill: false,
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: { usePointStyle: true, padding: 14, font: { size: 12 } }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function (ctx) {
+                                    return ctx.dataset.label.replace(' ✓', '') + ': ' + ctx.parsed.y.toFixed(2) + '%';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: { display: true, text: '评论区人数', font: { size: 12, weight: '600' } },
+                            grid: { display: false },
+                            ticks: {
+                                autoSkip: true,
+                                maxTicksLimit: 10,
+                                callback: function (v) {
+                                    if (v === 1 || v % 50 === 0) return v;
+                                    return '';
+                                }
+                            }
+                        },
+                        y: {
+                            title: { display: true, text: '概率 (%)', font: { size: 12, weight: '600' } },
+                            min: 0,
+                            max: 100,
+                            grid: { color: 'rgba(0,0,0,0.06)' },
+                            ticks: { stepSize: 10, callback: function (v) { return v + '%'; } }
+                        }
+                    },
+                    animation: { duration: 600, easing: 'easeOutQuart' }
+                }
+            });
+        }
+
+        function buildCompareChart() {
+            const leapOn = isLeapOn();
+            const range = getYearRange();
+            const maxN = 200;
+
+            const monthDayData = getMonthDayCurveData(maxN, leapOn);
+            const ymdData = getYmdCurveData(maxN, range.start, range.end, leapOn);
+            const paradoxData = getParadoxCurveData(maxN, leapOn);
+
+            const ctx = document.getElementById('compareChart').getContext('2d');
+
+            if (compareChartInstance) compareChartInstance.destroy();
+
+            const modeLabel = leapOn ? '(考虑闰年)' : '(不考虑闰年)';
+
+            compareChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: monthDayData.labels,
+                    datasets: [
+                        {
+                            label: '月/日匹配 ' + modeLabel,
+                            data: monthDayData.data,
+                            borderColor: '#667eea',
+                            borderWidth: 2.5,
+                            pointRadius: 0,
+                            tension: 0.4,
+                            fill: false,
+                        },
+                        {
+                            label: '同年同月同日 ' + modeLabel,
+                            data: ymdData.data,
+                            borderColor: '#ef4444',
+                            borderWidth: 2.5,
+                            borderDash: [6, 3],
+                            pointRadius: 0,
+                            tension: 0.4,
+                            fill: false,
+                        },
+                        {
+                            label: '生日悖论 ' + modeLabel,
+                            data: paradoxData,
+                            borderColor: '#f59e0b',
+                            borderWidth: 2.5,
+                            borderDash: [2, 4],
+                            pointRadius: 0,
+                            tension: 0.4,
+                            fill: false,
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: { usePointStyle: true, padding: 14, font: { size: 12 } }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function (ctx) {
+                                    return ctx.dataset.label.replace(' ' + modeLabel, '') + ': ' + ctx.parsed.y.toFixed(4) + '%';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: { display: true, text: '评论区人数', font: { size: 12, weight: '600' } },
+                            grid: { display: false },
+                            ticks: {
+                                autoSkip: true,
+                                maxTicksLimit: 10,
+                                callback: function (v) {
+                                    if (v === 1 || v % 20 === 0) return v;
+                                    return '';
+                                }
+                            }
+                        },
+                        y: {
+                            title: { display: true, text: '概率 (%)', font: { size: 12, weight: '600' } },
+                            min: 0,
+                            max: 100,
+                            grid: { color: 'rgba(0,0,0,0.06)' },
+                            ticks: { stepSize: 10, callback: function (v) { return v + '%'; } }
+                        }
+                    },
+                    animation: { duration: 600, easing: 'easeOutQuart' }
+                }
+            });
+        }
+
+        function updateNeededTable() {
+            const leapOn = isLeapOn();
+            const range = getYearRange();
+            const targets = [0.5, 0.9, 0.99];
+            const tbody = document.getElementById('neededTable');
+            tbody.innerHTML = '';
+
+            targets.forEach(function (target) {
+                const nMd = calcNeededMonthDay(target, leapOn);
+                const nYmd = calcNeededYmd(target, range.start, range.end, leapOn);
+                const nPara = calcNeededParadox(target, leapOn);
+                const row = document.createElement('tr');
+                row.innerHTML =
+                    '<td>' + (target * 100).toFixed(0) + '%</td>' +
+                    '<td>' + (nMd !== null ? nMd.toLocaleString() + ' 人' : '—') + '</td>' +
+                    '<td>' + (nYmd !== null ? nYmd.toLocaleString() + ' 人' : '—') + '</td>' +
+                    '<td>' + (nPara !== null ? nPara + ' 人' : '—') + '</td>';
+                tbody.appendChild(row);
+            });
+        }
+
+        function updateResults(n) {
+            const leapOn = isLeapOn();
+            const range = getYearRange();
+
+            const probMd = calculateExactMatchProb(n, leapOn);
+            const probYmd = calculateYmdMatchProb(n, range.start, range.end, leapOn);
+            const probPara = calculateParadoxProb(n, leapOn);
+
+            document.getElementById('exactMatch').textContent = formatPct(probMd);
+            document.getElementById('ymdMatch').textContent = formatPct(probYmd);
+            document.getElementById('paradox').textContent = formatPct(probPara);
+
+            const totalDays = countTotalDays(range.start, range.end, leapOn);
+            document.getElementById('exactSub').textContent = leapOn ? '平均 1/365.24' : '平均 1/365';
+            document.getElementById('ymdSub').textContent = '共 ' + totalDays.toLocaleString() + ' 种可能日期';
+            document.getElementById('ymdRangeLabel').textContent = '年份 ' + range.start + '-' + range.end;
+
+            document.getElementById('toggleHint').textContent = leapOn ? '2月29日概率 1/1461' : '按每年 365 天计算';
+        }
+
+        function calculate() {
+            const input = document.getElementById('peopleInput');
+            let n = parseInt(input.value, 10);
+            if (isNaN(n) || n < 1) { n = 1; input.value = 1; }
+            if (n > 1000000) { n = 1000000; input.value = 1000000; }
+
+            const y1 = parseInt(document.getElementById('yearStart').value, 10);
+            const y2 = parseInt(document.getElementById('yearEnd').value, 10);
+            if (isNaN(y1) || y1 < 1900) document.getElementById('yearStart').value = 1996;
+            if (isNaN(y2) || y2 > 2030) document.getElementById('yearEnd').value = 2010;
+
+            updateResults(n);
+            updateNeededTable();
+            buildExactChart();
+            buildCompareChart();
+            buildBirthRateChart();
+        }
+
+        function buildBirthRateChart() {
+            const ctx = document.getElementById('birthRateChart').getContext('2d');
+            if (birthRateChartInstance) birthRateChartInstance.destroy();
+
+            const months = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+            const birthRates = [9.2, 8.2, 9.2, 7.4, 7.4, 7.2, 7.2, 7.4, 6.4, 6.0, 12.2, 12.6];
+
+            birthRateChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: months,
+                    datasets: [
+                        {
+                            label: '人口出生率 (%)',
+                            data: birthRates,
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            borderWidth: 3,
+                            pointRadius: 5,
+                            pointBackgroundColor: '#10b981',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            pointHoverRadius: 7,
+                            tension: 0.3,
+                            fill: true,
+                        },
+                        {
+                            label: '平均值',
+                            data: Array(12).fill(birthRates.reduce((a, b) => a + b, 0) / 12),
+                            borderColor: '#9ca3af',
+                            borderWidth: 2,
+                            borderDash: [6, 3],
+                            pointRadius: 0,
+                            tension: 0,
+                            fill: false,
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: { usePointStyle: true, padding: 14, font: { size: 12 } }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function (ctx) {
+                                    if (ctx.dataset.label === '平均值') {
+                                        return ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(2) + '%';
+                                    }
+                                    return ctx.dataset.label + ': ' + ctx.parsed.y + '%';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: { display: true, text: '月份', font: { size: 12, weight: '600' } },
+                            grid: { display: false },
+                        },
+                        y: {
+                            title: { display: true, text: '出生率 (%)', font: { size: 12, weight: '600' } },
+                            min: 0,
+                            max: 14,
+                            grid: { color: 'rgba(0,0,0,0.06)' },
+                            ticks: { stepSize: 2, callback: function (v) { return v + '%'; } }
+                        }
+                    },
+                    animation: { duration: 800, easing: 'easeOutQuart' }
+                }
+            });
+        }
+
+        function switchTab(tabId, btn) {
+            document.querySelectorAll('.tab-panel').forEach(function (el) { el.classList.remove('active'); });
+            document.querySelectorAll('.tab-bar button').forEach(function (el) { el.classList.remove('active'); });
+            document.getElementById('tab-' + tabId).classList.add('active');
+            btn.classList.add('active');
+            setTimeout(function () {
+                if (tabId === 'exact' && exactChartInstance) exactChartInstance.resize();
+                if (tabId === 'compare' && compareChartInstance) compareChartInstance.resize();
+            }, 50);
+        }
+
+        document.getElementById('peopleInput').addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') calculate();
+        });
+        document.getElementById('yearStart').addEventListener('change', calculate);
+        document.getElementById('yearEnd').addEventListener('change', calculate);
+
+        calculate();
+    </script>
+
+</body>
+</html>
