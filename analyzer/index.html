@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>抖音评论生日分析器</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            min-height: 100vh;
+            padding: 12px;
+        }
+
+        .container {
+            max-width: 980px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+            color: white;
+            padding: 32px 24px 28px;
+            text-align: center;
+        }
+
+        .header .logo {
+            font-size: 40px;
+            margin-bottom: 8px;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .header p {
+            font-size: 13px;
+            opacity: 0.8;
+            line-height: 1.6;
+        }
+
+        .header .tag {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 3px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            margin-top: 10px;
+        }
+
+        .body-content {
+            padding: 24px 20px 28px;
+        }
+
+        .input-section {
+            background: #f8f9fc;
+            border-radius: 14px;
+            padding: 20px;
+            border: 1px solid #eef0f5;
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            margin-bottom: 14px;
+        }
+
+        .input-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 6px;
+        }
+
+        .input-group label .required {
+            color: #ef4444;
+        }
+
+        .input-group .hint {
+            font-size: 11px;
+            color: #9ca3af;
+            margin-top: 4px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 11px 14px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .input-group input:focus {
+            border-color: #667eea;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+        }
+
+        .input-row .input-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        .btn-primary {
+            padding: 11px 32px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+            white-space: nowrap;
+            height: 44px;
+            min-width: 120px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status-bar {
+            display: none;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 18px;
+            background: #eff6ff;
+            border-radius: 10px;
+            border: 1px solid #dbeafe;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #1e40af;
+        }
+
+        .status-bar.active {
+            display: flex;
+        }
+
+        .status-bar.error {
+            background: #fef2f2;
+            border-color: #fecaca;
+            color: #dc2626;
+        }
+
+        .status-bar .spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid #dbeafe;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            flex-shrink: 0;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .results-summary {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .stat-item {
+            background: #f8f9fc;
+            border-radius: 12px;
+            padding: 16px 12px;
+            text-align: center;
+            border: 1px solid #eef0f5;
+        }
+
+        .stat-item .label {
+            font-size: 11px;
+            color: #6b7280;
+            margin-bottom: 4px;
+        }
+
+        .stat-item .value {
+            font-size: 26px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .stat-item .value.purple {
+            color: #667eea;
+        }
+
+        .stat-item .value.green {
+            color: #10b981;
+        }
+
+        .stat-item .value.orange {
+            color: #f59e0b;
+        }
+
+        .stat-item .value.red {
+            color: #ef4444;
+        }
+
+        .divider {
+            height: 1px;
+            background: #e5e7eb;
+            margin: 20px 0;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-title .badge {
+            font-size: 11px;
+            background: #667eea;
+            color: white;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 320px;
+            margin-bottom: 20px;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+            margin-bottom: 16px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        table th {
+            background: #f3f4f6;
+            text-align: left;
+            padding: 9px 12px;
+            font-weight: 600;
+            color: #374151;
+            border-bottom: 2px solid #e5e7eb;
+            white-space: nowrap;
+        }
+
+        table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid #f3f4f6;
+            color: #4b5563;
+        }
+
+        table tr:hover td {
+            background: #f9fafb;
+        }
+
+        .type-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .type-badge.birthday {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        .type-badge.wish {
+            background: #fef3c7;
+            color: #b45309;
+        }
+
+        .type-badge.zodiac {
+            background: #ede9fe;
+            color: #7c3aed;
+        }
+
+        .comment-list {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+        }
+
+        .comment-item {
+            padding: 12px 14px;
+            border-bottom: 1px solid #f3f4f6;
+            font-size: 13px;
+            line-height: 1.6;
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+        }
+
+        .comment-item:last-child {
+            border-bottom: none;
+        }
+
+        .comment-item .idx {
+            color: #9ca3af;
+            font-size: 11px;
+            font-weight: 600;
+            min-width: 28px;
+            text-align: right;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .comment-item .text {
+            flex: 1;
+            color: #374151;
+        }
+
+        .comment-item .meta {
+            font-size: 11px;
+            color: #9ca3af;
+            margin-top: 3px;
+        }
+
+        .highlight-birthday {
+            background: #fef3c7;
+            padding: 1px 4px;
+            border-radius: 4px;
+            font-weight: 600;
+            color: #b45309;
+        }
+
+        .marker-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 4px;
+        }
+
+        .marker-dot.birthday { background: #3b82f6; }
+        .marker-dot.wish { background: #f59e0b; }
+        .marker-dot.zodiac { background: #8b5cf6; }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #9ca3af;
+        }
+
+        .empty-state .icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+
+        .empty-state p {
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .nav-bar {
+            display: flex;
+            gap: 4px;
+            background: #f3f4f6;
+            border-radius: 10px;
+            padding: 4px;
+            margin-bottom: 16px;
+        }
+
+        .nav-bar a {
+            flex: 1;
+            padding: 8px 14px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #6b7280;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .nav-bar a.active {
+            background: white;
+            color: #667eea;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+        }
+
+        .nav-bar a:hover:not(.active) {
+            color: #374151;
+        }
+
+        .footer {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 12px;
+            padding: 14px 0 6px;
+        }
+
+        .footer a {
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        .tab-bar {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 14px;
+            background: #f3f4f6;
+            border-radius: 10px;
+            padding: 4px;
+        }
+
+        .tab-bar button {
+            flex: 1;
+            padding: 7px 14px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #6b7280;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tab-bar button.active {
+            background: white;
+            color: #667eea;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+        }
+
+        .tab-panel {
+            display: none;
+        }
+
+        .tab-panel.active {
+            display: block;
+        }
+
+        .note-box {
+            background: #f0fdf4;
+            border-left: 4px solid #10b981;
+            border-radius: 8px;
+            padding: 14px 18px;
+            font-size: 13px;
+            color: #166534;
+            line-height: 1.7;
+            margin-top: 16px;
+        }
+
+        .note-box.warn {
+            background: #fffbeb;
+            border-left-color: #f59e0b;
+            color: #92400e;
+        }
+
+        @media (max-width: 700px) {
+            body {
+                padding: 8px;
+            }
+
+            .header {
+                padding: 24px 16px 20px;
+            }
+
+            .header h1 {
+                font-size: 20px;
+            }
+
+            .header .logo {
+                font-size: 32px;
+            }
+
+            .body-content {
+                padding: 16px 12px 20px;
+            }
+
+            .results-summary {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
+            }
+
+            .stat-item {
+                padding: 12px 8px;
+            }
+
+            .stat-item .value {
+                font-size: 22px;
+            }
+
+            .input-row {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .input-row .input-group {
+                margin-bottom: 0;
+            }
+
+            .btn-primary {
+                width: 100%;
+            }
+
+            .chart-container {
+                height: 260px;
+            }
+
+            .nav-bar {
+                flex-direction: column;
+                gap: 2px;
+            }
+
+            .tab-bar {
+                flex-direction: column;
+                gap: 2px;
+            }
+
+            .comment-list {
+                max-height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <div class="card">
+            <div class="header">
+                <div class="logo">🎂</div>
+                <h1>抖音评论生日分析器</h1>
+                <p>粘贴抖音视频链接，AI 自动识别评论区中的生日日期与祝福，<br>统计生日分布，发现与你同一天的人</p>
+                <span class="tag">🤖 接入 DeepSeek AI</span>
+            </div>
+            <div class="body-content">
+
+                <div class="nav-bar">
+                    <a href="/" class="">生日概率计算器</a>
+                    <a href="/analyzer/" class="active">评论生日分析器</a>
+                </div>
+
+                <div class="input-section">
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label>抖音视频链接 <span class="required">*</span></label>
+                            <input type="url" id="videoUrlInput" placeholder="https://www.douyin.com/video/... 或 https://v.douyin.com/...">
+                            <div class="hint">支持抖音 app 复制的链接或网页版链接</div>
+                        </div>
+                    </div>
+                    <div class="input-row" style="margin-top: 12px;">
+                        <div class="input-group" style="flex: 1;">
+                            <label>DeepSeek API Key <span class="required">*</span></label>
+                            <input type="password" id="apiKeyInput" placeholder="sk-...">
+                            <div class="hint">用于 AI 识别生日日期，可到 platform.deepseek.com 获取</div>
+                        </div>
+                        <button class="btn-primary" id="analyzeBtn" onclick="startAnalysis()">开始分析</button>
+                    </div>
+                </div>
+
+                <div class="status-bar" id="statusBar">
+                    <div class="spinner" id="statusSpinner"></div>
+                    <span id="statusText">正在分析中，请稍候...</span>
+                </div>
+
+                <div id="resultsArea" style="display: none;">
+                    <div class="results-summary">
+                        <div class="stat-item">
+                            <div class="label">评论总数</div>
+                            <div class="value purple" id="statTotal">—</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="label">生日提及</div>
+                            <div class="value green" id="statBirthdays">—</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="label">提及率</div>
+                            <div class="value orange" id="statRate">—</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="label">不同日期数</div>
+                            <div class="value red" id="statDates">—</div>
+                        </div>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <div class="section-title">
+                        <span>生日日期分布</span>
+                        <span class="badge">Top 10</span>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="birthdayChart"></canvas>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <div class="section-title">
+                        <span>识别结果明细</span>
+                        <span class="badge" id="resultCount">0 条</span>
+                    </div>
+
+                    <div class="tab-bar">
+                        <button class="active" onclick="switchTab('all', this)">全部</button>
+                        <button onclick="switchTab('birthday', this)">🎂 生日日期</button>
+                        <button onclick="switchTab('wish', this)">🎉 生日祝福</button>
+                        <button onclick="switchTab('zodiac', this)">⭐ 星座</button>
+                    </div>
+
+                    <div class="tab-panel active" id="tab-all">
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>类型</th>
+                                        <th>日期 / 星座</th>
+                                        <th>评论内容</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="birthdayTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="tab-panel" id="tab-birthday">
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>日期</th>
+                                        <th>评论内容</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="birthdayOnlyBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="tab-panel" id="tab-wish">
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>评论内容</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="wishOnlyBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="tab-panel" id="tab-zodiac">
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>星座</th>
+                                        <th>评论内容</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="zodiacOnlyBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <div class="section-title">
+                        <span>评论原文预览</span>
+                        <span class="badge" id="commentCount">前 100 条</span>
+                    </div>
+
+                    <div id="commentsContainer">
+                        <div class="empty-state">
+                            <p>暂无评论数据</p>
+                        </div>
+                    </div>
+
+                    <div class="note-box">
+                        <strong>💡 使用说明</strong><br>
+                        • 在抖音 APP 中点 <strong>分享 → 复制链接</strong>，粘贴到上方输入框<br>
+                        • DeepSeek API Key 可在 <a href="https://platform.deepseek.com" target="_blank">platform.deepseek.com</a> 注册获取（有免费额度）<br>
+                        • 分析会获取最多 <strong>200 条</strong>评论进行 AI 识别<br>
+                        • API Key 仅用于本次请求，不会存储
+                    </div>
+
+                    <div class="note-box warn">
+                        <strong>⚠️ 注意</strong><br>
+                        抖音评论接口可能受平台限制，如遇获取失败请稍后重试。本工具仅用于学习和研究目的。
+                    </div>
+                </div>
+
+                <div id="emptyArea">
+                    <div class="empty-state">
+                        <div class="icon">🔍</div>
+                        <p>粘贴抖音视频链接，开始分析评论区中的生日信息</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="footer">
+            <a href="/">生日概率计算器</a> &mdash; 评论生日分析器 &mdash; 数据驱动，AI 赋能
+        </div>
+
+    </div>
+
+    <script>
+        let chartInstance = null;
+        let currentData = null;
+
+        const savedKey = localStorage.getItem('deepseek_api_key');
+        if (savedKey) {
+            document.getElementById('apiKeyInput').value = savedKey;
+        }
+
+        document.getElementById('apiKeyInput').addEventListener('change', function () {
+            if (this.value) {
+                localStorage.setItem('deepseek_api_key', this.value);
+            }
+        });
+
+        document.getElementById('videoUrlInput').addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') startAnalysis();
+        });
+
+        document.getElementById('apiKeyInput').addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') startAnalysis();
+        });
+
+        function showStatus(message, isError) {
+            const bar = document.getElementById('statusBar');
+            const text = document.getElementById('statusText');
+            const spinner = document.getElementById('statusSpinner');
+            bar.classList.add('active');
+            bar.classList.remove('error');
+            spinner.style.display = 'inline-block';
+            text.textContent = message;
+            if (isError) {
+                bar.classList.add('error');
+            }
+        }
+
+        function hideStatus() {
+            document.getElementById('statusBar').classList.remove('active');
+        }
+
+        async function startAnalysis() {
+            const videoUrl = document.getElementById('videoUrlInput').value.trim();
+            const apiKey = document.getElementById('apiKeyInput').value.trim();
+
+            if (!videoUrl) {
+                showStatus('请先输入抖音视频链接', true);
+                return;
+            }
+
+            if (!apiKey) {
+                showStatus('请先输入 DeepSeek API Key', true);
+                return;
+            }
+
+            const btn = document.getElementById('analyzeBtn');
+            btn.disabled = true;
+            btn.textContent = '分析中...';
+
+            document.getElementById('resultsArea').style.display = 'none';
+            document.getElementById('emptyArea').style.display = 'none';
+
+            showStatus('正在获取抖音评论...');
+
+            try {
+                const resp = await fetch('/api/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        videoUrl,
+                        deepseekApiKey: apiKey,
+                        maxComments: 200,
+                    }),
+                });
+
+                const data = await resp.json();
+
+                if (!resp.ok || !data.success) {
+                    showStatus(data.error || '分析失败，请稍后重试', true);
+                    btn.disabled = false;
+                    btn.textContent = '开始分析';
+                    document.getElementById('emptyArea').style.display = 'block';
+                    return;
+                }
+
+                hideStatus();
+                currentData = data;
+                renderResults(data);
+                document.getElementById('resultsArea').style.display = 'block';
+                document.getElementById('emptyArea').style.display = 'none';
+            } catch (err) {
+                showStatus('网络错误: ' + err.message, true);
+                document.getElementById('emptyArea').style.display = 'block';
+            }
+
+            btn.disabled = false;
+            btn.textContent = '开始分析';
+        }
+
+        function renderResults(data) {
+            const stats = data.stats;
+            const birthdays = data.birthdays || [];
+
+            document.getElementById('statTotal').textContent = stats.totalComments.toLocaleString();
+            document.getElementById('statBirthdays').textContent = stats.totalBirthdayMentions;
+            document.getElementById('statRate').textContent = stats.mentionRate + '%';
+            document.getElementById('statDates').textContent = stats.topDates.length;
+
+            document.getElementById('resultCount').textContent = birthdays.length + ' 条';
+
+            renderChart(stats.topDates);
+            renderTable(birthdays);
+            renderComments(data.comments);
+        }
+
+        function renderChart(topDates) {
+            const ctx = document.getElementById('birthdayChart').getContext('2d');
+            if (chartInstance) chartInstance.destroy();
+
+            const labels = topDates.slice(0, 10).map(d => d.date);
+            const values = topDates.slice(0, 10).map(d => d.count);
+
+            const colors = [
+                '#667eea', '#764ba2', '#f59e0b', '#10b981', '#ef4444',
+                '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'
+            ];
+
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '出现次数',
+                        data: values,
+                        backgroundColor: colors.slice(0, labels.length),
+                        borderRadius: 6,
+                        borderSkipped: false,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function (ctx) {
+                                    return ctx.parsed.x + ' 次';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1,
+                                font: { size: 11 }
+                            },
+                            grid: { color: 'rgba(0,0,0,0.05)' }
+                        },
+                        y: {
+                            grid: { display: false },
+                            ticks: { font: { size: 12, weight: '600' } }
+                        }
+                    },
+                    animation: { duration: 600, easing: 'easeOutQuart' }
+                }
+            });
+        }
+
+        function renderTable(birthdays) {
+            const allBody = document.getElementById('birthdayTableBody');
+            const birthdayOnlyBody = document.getElementById('birthdayOnlyBody');
+            const wishOnlyBody = document.getElementById('wishOnlyBody');
+            const zodiacOnlyBody = document.getElementById('zodiacOnlyBody');
+
+            allBody.innerHTML = '';
+            birthdayOnlyBody.innerHTML = '';
+            wishOnlyBody.innerHTML = '';
+            zodiacOnlyBody.innerHTML = '';
+
+            if (birthdays.length === 0) {
+                const emptyHtml = '<tr><td colspan="4" style="text-align:center;color:#9ca3af;padding:24px;">未识别到生日相关信息</td></tr>';
+                allBody.innerHTML = emptyHtml;
+                birthdayOnlyBody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:#9ca3af;padding:24px;">未识别到生日日期</td></tr>';
+                wishOnlyBody.innerHTML = '<tr><td colspan="2" style="text-align:center;color:#9ca3af;padding:24px;">未识别到生日祝福</td></tr>';
+                zodiacOnlyBody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:#9ca3af;padding:24px;">未识别到星座</td></tr>';
+                return;
+            }
+
+            const typeLabels = {
+                birthday: '<span class="type-badge birthday"><span class="marker-dot birthday"></span>生日日期</span>',
+                wish: '<span class="type-badge wish"><span class="marker-dot wish"></span>生日祝福</span>',
+                zodiac: '<span class="type-badge zodiac"><span class="marker-dot zodiac"></span>星座</span>'
+            };
+
+            for (const b of birthdays) {
+                const row = document.createElement('tr');
+                row.innerHTML =
+                    '<td style="color:#9ca3af;font-size:11px;">' + b.commentIndex + '</td>' +
+                    '<td>' + (typeLabels[b.type] || b.type) + '</td>' +
+                    '<td><strong>' + (b.date || '—') + '</strong></td>' +
+                    '<td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escapeHtml(b.originalText || '') + '</td>';
+                allBody.appendChild(row);
+
+                if (b.type === 'birthday') {
+                    const rowB = document.createElement('tr');
+                    rowB.innerHTML =
+                        '<td style="color:#9ca3af;font-size:11px;">' + b.commentIndex + '</td>' +
+                        '<td><strong>' + (b.date || '—') + '</strong></td>' +
+                        '<td style="max-width:400px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escapeHtml(b.originalText || '') + '</td>';
+                    birthdayOnlyBody.appendChild(rowB);
+                } else if (b.type === 'wish') {
+                    const rowW = document.createElement('tr');
+                    rowW.innerHTML =
+                        '<td style="color:#9ca3af;font-size:11px;">' + b.commentIndex + '</td>' +
+                        '<td style="max-width:500px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escapeHtml(b.originalText || '') + '</td>';
+                    wishOnlyBody.appendChild(rowW);
+                } else if (b.type === 'zodiac') {
+                    const rowZ = document.createElement('tr');
+                    rowZ.innerHTML =
+                        '<td style="color:#9ca3af;font-size:11px;">' + b.commentIndex + '</td>' +
+                        '<td><strong>' + (b.date || '—') + '</strong></td>' +
+                        '<td style="max-width:400px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escapeHtml(b.originalText || '') + '</td>';
+                    zodiacOnlyBody.appendChild(rowZ);
+                }
+            }
+
+            if (birthdayOnlyBody.children.length === 0) {
+                birthdayOnlyBody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:#9ca3af;padding:24px;">未识别到生日日期</td></tr>';
+            }
+            if (wishOnlyBody.children.length === 0) {
+                wishOnlyBody.innerHTML = '<tr><td colspan="2" style="text-align:center;color:#9ca3af;padding:24px;">未识别到生日祝福</td></tr>';
+            }
+            if (zodiacOnlyBody.children.length === 0) {
+                zodiacOnlyBody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:#9ca3af;padding:24px;">未识别到星座</td></tr>';
+            }
+        }
+
+        function renderComments(comments) {
+            const container = document.getElementById('commentsContainer');
+            document.getElementById('commentCount').textContent = '前 ' + (comments ? comments.length : 0) + ' 条';
+
+            if (!comments || comments.length === 0) {
+                container.innerHTML = '<div class="empty-state"><p>暂无评论数据</p></div>';
+                return;
+            }
+
+            let html = '<div class="comment-list">';
+            for (let i = 0; i < comments.length; i++) {
+                const c = comments[i];
+                const highlighted = highlightBirthdays(c.text, currentData.birthdays || [], i + 1);
+                html +=
+                    '<div class="comment-item">' +
+                    '<span class="idx">#' + (i + 1) + '</span>' +
+                    '<div>' +
+                    '<div class="text">' + highlighted + '</div>' +
+                    '<div class="meta">👤 ' + escapeHtml(c.user) + ' &middot; 👍 ' + c.diggCount + '</div>' +
+                    '</div>' +
+                    '</div>';
+            }
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function highlightBirthdays(text, birthdays, index) {
+            let escaped = escapeHtml(text);
+            for (const b of birthdays) {
+                if (b.commentIndex === index) {
+                    escaped = '<span class="highlight-birthday">🎂 ' + escaped + '</span>';
+                    break;
+                }
+            }
+            return escaped;
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function switchTab(tabId, btn) {
+            document.querySelectorAll('.tab-panel').forEach(function (el) { el.classList.remove('active'); });
+            document.querySelectorAll('.tab-bar button').forEach(function (el) { el.classList.remove('active'); });
+            document.getElementById('tab-' + tabId).classList.add('active');
+            btn.classList.add('active');
+        }
+    </script>
+</body>
+</html>
