@@ -5,16 +5,49 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>生日相同概率计算器</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;500&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --color-green: #3ecf8e;
+            --color-green-link: #00c573;
+            --color-green-border: rgba(62, 207, 142, 0.3);
+            --color-near-black: #0f0f0f;
+            --color-dark: #171717;
+            --color-dark-border: #242424;
+            --color-border-dark: #2e2e2e;
+            --color-mid-border: #363636;
+            --color-border-light: #393939;
+            --color-mid-gray: #898989;
+            --color-light-gray: #b4b4b4;
+            --color-near-white: #efefef;
+            --color-off-white: #fafafa;
+            --color-tomato: #e5484d;
+            --color-yellow: #f5d90a;
+            --font-primary: system-ui, -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            --font-mono: 'Source Code Pro', 'Office Code Pro', Menlo, monospace;
+            --bg-page: #0f0f0f;
+            --bg-card: #141414;
+            --bg-input: #140e1f;
+            --bg-surface: #171717;
+            --text-primary: #fafafa;
+            --text-secondary: #b4b4b4;
+            --text-muted: #898989;
+            --border-color: #2e2e2e;
+            --border-subtle: #1e1e1e;
         }
 
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--bg-page);
+            color: var(--text-primary);
+            font-family: var(--font-primary);
+            font-size: 16px;
+            font-weight: 400;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
             min-height: 100vh;
             padding: 12px;
         }
@@ -25,65 +58,83 @@
         }
 
         .card {
-            background: white;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
             border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
             overflow: hidden;
             margin-bottom: 24px;
         }
 
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 28px 20px 22px;
+            padding: 32px 24px 28px;
             text-align: center;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .header .label {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            font-weight: 400;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: var(--color-green);
+            margin-bottom: 12px;
         }
 
         .header h1 {
-            font-size: 22px;
-            font-weight: 700;
-            margin-bottom: 6px;
+            font-size: 28px;
+            font-weight: 400;
+            line-height: 1.15;
+            margin-bottom: 10px;
+            color: var(--text-primary);
         }
 
         .header p {
-            font-size: 13px;
-            opacity: 0.9;
-            line-height: 1.5;
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .header p strong {
+            color: var(--color-green-link);
+            font-weight: 500;
         }
 
         .nav-bar {
             display: flex;
             gap: 4px;
-            background: #f3f4f6;
-            border-radius: 10px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: 9999px;
             padding: 4px;
-            margin-bottom: 16px;
+            margin-bottom: 20px;
         }
 
         .nav-bar a {
             flex: 1;
-            padding: 8px 14px;
+            padding: 8px 18px;
             text-decoration: none;
-            border-radius: 8px;
+            border-radius: 9999px;
             font-size: 13px;
             font-weight: 500;
-            color: #6b7280;
+            color: var(--text-muted);
             transition: all 0.2s;
             text-align: center;
+            line-height: 1.43;
         }
 
         .nav-bar a.active {
-            background: white;
-            color: #667eea;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+            background: var(--color-near-black);
+            color: var(--color-off-white);
+            border: 1px solid var(--color-border-dark);
         }
 
         .nav-bar a:hover:not(.active) {
-            color: #374151;
+            color: var(--text-secondary);
         }
 
         .body-content {
-            padding: 20px 16px 24px;
+            padding: 24px 20px 28px;
         }
 
         .input-group {
@@ -91,28 +142,31 @@
             gap: 10px;
             align-items: center;
             flex-wrap: wrap;
-            margin-bottom: 10px;
+            margin-bottom: 14px;
         }
 
         .input-group label {
             font-size: 14px;
-            font-weight: 600;
-            color: #374151;
+            font-weight: 500;
+            color: var(--text-secondary);
             white-space: nowrap;
         }
 
         .input-group input[type="number"] {
             padding: 9px 14px;
-            border: 2px solid #e5e7eb;
-            border-radius: 10px;
-            font-size: 15px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 14px;
+            color: var(--text-primary);
             outline: none;
-            transition: border-color 0.2s;
+            transition: border-color 0.2s, box-shadow 0.2s;
             width: 120px;
         }
 
         .input-group input[type="number"]:focus {
-            border-color: #667eea;
+            border-color: var(--color-green);
+            box-shadow: 0 0 0 1px var(--color-green-border);
         }
 
         .input-group input.year-input {
@@ -121,29 +175,28 @@
 
         .input-group .range-sep {
             font-size: 16px;
-            color: #9ca3af;
-            font-weight: 600;
+            color: var(--text-muted);
         }
 
         .input-group button {
-            padding: 9px 24px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 10px;
+            padding: 8px 22px;
+            background: var(--color-near-black);
+            color: var(--color-off-white);
+            border: 1px solid var(--color-border-dark);
+            border-radius: 9999px;
             font-size: 14px;
-            font-weight: 600;
+            font-weight: 500;
             cursor: pointer;
-            transition: transform 0.15s, box-shadow 0.15s;
+            transition: border-color 0.2s, background 0.2s;
+            line-height: 1.14;
         }
 
         .input-group button:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            border-color: var(--color-off-white);
         }
 
         .input-group button:active {
-            transform: translateY(0);
+            background: var(--color-dark);
         }
 
         .input-row {
@@ -162,51 +215,55 @@
 
         .input-row .field-group label {
             font-size: 13px;
-            font-weight: 600;
-            color: #374151;
+            font-weight: 500;
+            color: var(--text-secondary);
             white-space: nowrap;
         }
 
         .input-row .field-group input {
             padding: 7px 10px;
-            border: 2px solid #e5e7eb;
-            border-radius: 8px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
             font-size: 14px;
+            color: var(--text-primary);
             outline: none;
-            transition: border-color 0.2s;
+            transition: border-color 0.2s, box-shadow 0.2s;
             width: 80px;
         }
 
         .input-row .field-group input:focus {
-            border-color: #667eea;
+            border-color: var(--color-green);
+            box-shadow: 0 0 0 1px var(--color-green-border);
         }
 
         .toggle-row {
             display: flex;
             align-items: center;
             gap: 14px;
-            padding: 10px 16px;
-            background: #f9fafb;
+            padding: 12px 16px;
+            background: var(--bg-surface);
             border-radius: 10px;
-            border: 1px solid #f3f4f6;
+            border: 1px solid var(--border-color);
         }
 
         .toggle-row .toggle-label {
             font-size: 14px;
-            font-weight: 600;
-            color: #374151;
+            font-weight: 500;
+            color: var(--text-secondary);
         }
 
         .toggle-row .toggle-hint {
             font-size: 12px;
-            color: #6b7280;
+            color: var(--text-muted);
             margin-left: auto;
+            font-family: var(--font-mono);
         }
 
         .toggle-switch {
             position: relative;
-            width: 48px;
-            height: 26px;
+            width: 44px;
+            height: 24px;
             flex-shrink: 0;
             cursor: pointer;
         }
@@ -220,77 +277,69 @@
         .toggle-slider {
             position: absolute;
             inset: 0;
-            background: #d1d5db;
-            border-radius: 26px;
+            background: var(--color-border-dark);
+            border-radius: 24px;
             transition: background 0.25s;
         }
 
         .toggle-slider::before {
             content: '';
             position: absolute;
-            height: 20px;
-            width: 20px;
+            height: 18px;
+            width: 18px;
             left: 3px;
             bottom: 3px;
-            background: white;
+            background: var(--text-primary);
             border-radius: 50%;
             transition: transform 0.25s;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
         }
 
         .toggle-switch input:checked + .toggle-slider {
-            background: #667eea;
+            background: var(--color-green);
         }
 
         .toggle-switch input:checked + .toggle-slider::before {
-            transform: translateX(22px);
+            transform: translateX(20px);
         }
 
         .results-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 12px;
-            margin-bottom: 24px;
+            margin-bottom: 28px;
         }
 
         .result-item {
-            background: #f9fafb;
+            background: var(--bg-surface);
             border-radius: 12px;
-            padding: 16px 12px;
+            padding: 18px 14px;
             text-align: center;
-            border: 1px solid #f3f4f6;
+            border: 1px solid var(--border-color);
         }
 
         .result-item .label {
             font-size: 12px;
-            color: #6b7280;
-            margin-bottom: 5px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
             line-height: 1.5;
         }
 
         .result-item .value {
-            font-size: 28px;
-            font-weight: 700;
-            color: #1f2937;
+            font-size: 30px;
+            font-weight: 400;
+            color: var(--text-primary);
             transition: color 0.3s;
         }
 
-        .result-item .value.color-md {
-            color: #667eea;
-        }
-
-        .result-item .value.color-ymd {
-            color: #ef4444;
-        }
-
-        .result-item .value.color-paradox {
-            color: #f59e0b;
-        }
+        .result-item .value.color-md { color: var(--color-green); }
+        .result-item .value.color-ymd { color: var(--color-tomato); }
+        .result-item .value.color-paradox { color: var(--color-yellow); }
 
         .result-item .sub {
             font-size: 11px;
-            color: #9ca3af;
-            margin-top: 3px;
+            color: var(--text-muted);
+            margin-top: 4px;
+            font-family: var(--font-mono);
         }
 
         .chart-container {
@@ -299,31 +348,28 @@
             margin-bottom: 20px;
         }
 
-        .chart-container.tall {
-            height: 380px;
-        }
-
-        .chart-container.short {
-            height: 280px;
-        }
+        .chart-container.tall { height: 380px; }
+        .chart-container.short { height: 280px; }
 
         .section-title {
-            font-size: 16px;
-            font-weight: 700;
-            color: #1f2937;
-            margin-bottom: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 14px;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
         }
 
         .section-title .badge {
             font-size: 11px;
-            font-weight: 500;
-            background: #667eea;
-            color: white;
+            font-family: var(--font-mono);
+            color: var(--color-green);
+            background: rgba(62, 207, 142, 0.1);
+            border: 1px solid var(--color-green-border);
             padding: 2px 10px;
-            border-radius: 20px;
+            border-radius: 9999px;
+            font-weight: 400;
         }
 
         .table-wrap {
@@ -337,111 +383,104 @@
         }
 
         table th {
-            background: #f3f4f6;
+            background: var(--bg-surface);
             text-align: left;
-            padding: 9px 12px;
-            font-weight: 600;
-            color: #374151;
-            border-bottom: 2px solid #e5e7eb;
+            padding: 10px 14px;
+            font-weight: 500;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border-color);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         table td {
-            padding: 9px 12px;
-            border-bottom: 1px solid #f3f4f6;
-            color: #4b5563;
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
         }
 
         table tr:hover td {
-            background: #f9fafb;
+            background: var(--bg-surface);
         }
 
         .note-box {
-            background: #eff6ff;
-            border-left: 4px solid #667eea;
+            background: rgba(62, 207, 142, 0.04);
+            border-left: 3px solid var(--color-green);
             border-radius: 8px;
-            padding: 14px 18px;
+            padding: 16px 20px;
             font-size: 13px;
-            color: #1e40af;
+            color: var(--text-secondary);
             line-height: 1.7;
-            margin-top: 18px;
+            margin-top: 20px;
         }
 
         .note-box strong {
-            font-weight: 700;
+            color: var(--color-green-link);
+            font-weight: 500;
         }
 
         .tab-bar {
             display: flex;
             gap: 4px;
-            margin-bottom: 12px;
-            background: #f3f4f6;
-            border-radius: 10px;
+            margin-bottom: 14px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: 9999px;
             padding: 4px;
         }
 
         .tab-bar button {
             flex: 1;
-            padding: 7px 14px;
+            padding: 7px 16px;
             border: none;
             background: transparent;
-            border-radius: 8px;
+            border-radius: 9999px;
             font-size: 13px;
             font-weight: 500;
-            color: #6b7280;
+            color: var(--text-muted);
             cursor: pointer;
             transition: all 0.2s;
+            font-family: var(--font-primary);
         }
 
         .tab-bar button.active {
-            background: white;
-            color: #667eea;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+            background: var(--color-near-black);
+            color: var(--color-off-white);
+            border: 1px solid var(--color-border-dark);
         }
 
-        .tab-panel {
-            display: none;
-        }
-
-        .tab-panel.active {
-            display: block;
-        }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
 
         .footer {
             text-align: center;
-            color: rgba(255, 255, 255, 0.7);
+            color: var(--text-muted);
             font-size: 12px;
-            padding: 14px 0 6px;
+            padding: 16px 0 8px;
+        }
+
+        .footer a {
+            color: var(--color-green-link);
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
         }
 
         @media (max-width: 640px) {
-            body {
-                padding: 8px;
-            }
+            body { padding: 8px; }
 
-            .header h1 {
-                font-size: 20px;
-            }
+            .header { padding: 24px 16px 20px; }
+            .header h1 { font-size: 22px; }
+            .header p { font-size: 13px; }
 
-            .header p {
-                font-size: 12px;
-            }
+            .body-content { padding: 16px 12px 20px; }
 
-            .body-content {
-                padding: 16px 12px 20px;
-            }
-
-            .results-grid {
-                grid-template-columns: 1fr;
-                gap: 10px;
-            }
-
-            .result-item {
-                padding: 12px 10px;
-            }
-
-            .result-item .value {
-                font-size: 24px;
-            }
+            .results-grid { grid-template-columns: 1fr; gap: 10px; }
+            .result-item { padding: 14px 10px; }
+            .result-item .value { font-size: 26px; }
 
             .input-group {
                 flex-direction: column;
@@ -449,18 +488,11 @@
                 gap: 8px;
             }
 
-            .input-group label {
-                font-size: 13px;
-            }
+            .input-group label { font-size: 13px; }
+            .input-group input[type="number"] { width: 100%; }
 
-            .input-group input[type="number"] {
-                width: 100%;
-            }
-
-            .nav-bar {
-                flex-direction: column;
-                gap: 2px;
-            }
+            .nav-bar { flex-direction: column; border-radius: 12px; }
+            .nav-bar a { border-radius: 8px; }
 
             .input-row {
                 flex-direction: column;
@@ -468,10 +500,7 @@
                 gap: 10px;
             }
 
-            .input-row .field-group {
-                flex-wrap: wrap;
-                justify-content: center;
-            }
+            .input-row .field-group { flex-wrap: wrap; justify-content: center; }
 
             .toggle-row {
                 flex-direction: column;
@@ -479,75 +508,29 @@
                 gap: 8px;
                 padding: 10px 12px;
             }
+            .toggle-row .toggle-hint { margin-left: 0; }
 
-            .toggle-row .toggle-hint {
-                margin-left: 0;
-            }
+            .chart-container { height: 280px; }
+            .chart-container.tall { height: 300px; }
+            .chart-container.short { height: 240px; }
 
-            .chart-container {
-                height: 280px;
-            }
+            .section-title { font-size: 13px; }
 
-            .chart-container.tall {
-                height: 300px;
-            }
+            .tab-bar { flex-direction: column; border-radius: 12px; }
+            .tab-bar button { border-radius: 8px; width: 100%; }
 
-            .chart-container.short {
-                height: 240px;
-            }
+            table { font-size: 12px; }
+            table th, table td { padding: 8px 10px; }
 
-            .section-title {
-                font-size: 14px;
-            }
-
-            .tab-bar button {
-                padding: 6px 10px;
-                font-size: 12px;
-            }
-
-            table {
-                font-size: 12px;
-            }
-
-            table th, table td {
-                padding: 7px 8px;
-            }
-
-            .note-box {
-                font-size: 12px;
-                padding: 12px 14px;
-            }
+            .note-box { font-size: 12px; padding: 14px 16px; }
         }
 
         @media (max-width: 480px) {
-            .header {
-                padding: 20px 14px 18px;
-            }
-
-            .header h1 {
-                font-size: 18px;
-            }
-
-            .tab-bar {
-                flex-direction: column;
-                gap: 2px;
-            }
-
-            .tab-bar button {
-                width: 100%;
-            }
-
-            .chart-container {
-                height: 240px;
-            }
-
-            .chart-container.tall {
-                height: 260px;
-            }
-
-            .chart-container.short {
-                height: 200px;
-            }
+            .header { padding: 18px 12px 16px; }
+            .header h1 { font-size: 20px; }
+            .chart-container { height: 240px; }
+            .chart-container.tall { height: 260px; }
+            .chart-container.short { height: 200px; }
         }
     </style>
 </head>
@@ -557,6 +540,7 @@
 
         <div class="card">
             <div class="header">
+                <div class="label">Birthday Paradox Calculator</div>
                 <h1>生日相同概率计算器</h1>
                 <p>在评论区中，找到与自己出生<strong>月·日（不限年份）</strong> 或 <strong>年·月·日（完全一致）</strong>的人，概率有多大？</p>
             </div>
@@ -670,7 +654,7 @@
         </div>
 
         <div class="footer">
-            <a href="/analyzer/" style="color:rgba(255,255,255,0.7);text-decoration:none;">抖音评论生日分析器</a> &mdash; 生日概率计算器 &mdash; 数据驱动，科学计算
+            <a href="/analyzer/" style="color:var(--color-green-link);text-decoration:none;">抖音评论生日分析器</a> &mdash; 生日概率计算器 &mdash; 数据驱动，科学计算
         </div>
 
     </div>

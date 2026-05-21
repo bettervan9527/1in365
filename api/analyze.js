@@ -1,27 +1,27 @@
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
 
+function setCorsHeaders(res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+}
+
 export default async function handler(req, res) {
+  setCorsHeaders(res);
+
   if (!DEEPSEEK_API_KEY) {
     return res.status(500).json({ error: '服务端配置错误：DEEPSEEK_API_KEY 未设置' });
+  }
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
   }
 
   if (req.method !== 'POST') {
     return res.status(405).json({ error: '仅支持 POST 请求' });
   }
 
-  const headers = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-  };
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).setHeaders(headers).end();
-  }
-
-  res.setHeaders(headers);
-
-  const { videoUrl, maxComments = 200 } = req.body || {};
+  const { videoUrl, maxComments = 100 } = req.body || {};
 
   if (!videoUrl) {
     return res.status(400).json({ error: '请提供抖音视频链接' });
