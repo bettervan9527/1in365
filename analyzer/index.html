@@ -580,14 +580,7 @@
                         <div class="input-group">
                             <label>抖音视频链接 <span class="required">*</span></label>
                             <input type="url" id="videoUrlInput" placeholder="https://www.douyin.com/video/... 或 https://v.douyin.com/...">
-                            <div class="hint">支持抖音 app 复制的链接或网页版链接</div>
-                        </div>
-                    </div>
-                    <div class="input-row" style="margin-top: 12px;">
-                        <div class="input-group" style="flex: 1;">
-                            <label>DeepSeek API Key <span class="required">*</span></label>
-                            <input type="password" id="apiKeyInput" placeholder="sk-...">
-                            <div class="hint">用于 AI 识别生日日期，可到 platform.deepseek.com 获取</div>
+                            <div class="hint">在抖音 APP 中点分享 → 复制链接，粘贴到上方输入框</div>
                         </div>
                         <button class="btn-primary" id="analyzeBtn" onclick="startAnalysis()">开始分析</button>
                     </div>
@@ -718,9 +711,8 @@
                     <div class="note-box">
                         <strong>💡 使用说明</strong><br>
                         • 在抖音 APP 中点 <strong>分享 → 复制链接</strong>，粘贴到上方输入框<br>
-                        • DeepSeek API Key 可在 <a href="https://platform.deepseek.com" target="_blank">platform.deepseek.com</a> 注册获取（有免费额度）<br>
                         • 分析会获取最多 <strong>200 条</strong>评论进行 AI 识别<br>
-                        • API Key 仅用于本次请求，不会存储
+                        • 由 DeepSeek AI 自动识别生日、祝福和星座信息
                     </div>
 
                     <div class="note-box warn">
@@ -749,22 +741,7 @@
         let chartInstance = null;
         let currentData = null;
 
-        const savedKey = localStorage.getItem('deepseek_api_key');
-        if (savedKey) {
-            document.getElementById('apiKeyInput').value = savedKey;
-        }
-
-        document.getElementById('apiKeyInput').addEventListener('change', function () {
-            if (this.value) {
-                localStorage.setItem('deepseek_api_key', this.value);
-            }
-        });
-
         document.getElementById('videoUrlInput').addEventListener('keydown', function (e) {
-            if (e.key === 'Enter') startAnalysis();
-        });
-
-        document.getElementById('apiKeyInput').addEventListener('keydown', function (e) {
             if (e.key === 'Enter') startAnalysis();
         });
 
@@ -787,15 +764,9 @@
 
         async function startAnalysis() {
             const videoUrl = document.getElementById('videoUrlInput').value.trim();
-            const apiKey = document.getElementById('apiKeyInput').value.trim();
 
             if (!videoUrl) {
                 showStatus('请先输入抖音视频链接', true);
-                return;
-            }
-
-            if (!apiKey) {
-                showStatus('请先输入 DeepSeek API Key', true);
                 return;
             }
 
@@ -814,7 +785,6 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         videoUrl,
-                        deepseekApiKey: apiKey,
                         maxComments: 200,
                     }),
                 });

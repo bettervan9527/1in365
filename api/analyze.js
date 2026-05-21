@@ -1,3 +1,5 @@
+const DEEPSEEK_API_KEY = 'sk-053aefb40c2345bd99aa18015a035776';
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: '仅支持 POST 请求' });
@@ -15,14 +17,10 @@ export default async function handler(req, res) {
 
   res.setHeaders(headers);
 
-  const { videoUrl, deepseekApiKey, maxComments = 200 } = req.body || {};
+  const { videoUrl, maxComments = 200 } = req.body || {};
 
   if (!videoUrl) {
     return res.status(400).json({ error: '请提供抖音视频链接' });
-  }
-
-  if (!deepseekApiKey) {
-    return res.status(400).json({ error: '请提供 DeepSeek API Key' });
   }
 
   try {
@@ -36,7 +34,7 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: '未获取到评论，视频可能不存在或评论已关闭' });
     }
 
-    const analysis = await analyzeBirthdays(comments, deepseekApiKey);
+    const analysis = await analyzeBirthdays(comments, DEEPSEEK_API_KEY);
 
     const stats = calculateStats(comments, analysis);
 
