@@ -1,6 +1,10 @@
-const DEEPSEEK_API_KEY = 'sk-053aefb40c2345bd99aa18015a035776';
+const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
 
 export default async function handler(req, res) {
+  if (!DEEPSEEK_API_KEY) {
+    return res.status(500).json({ error: '服务端配置错误：DEEPSEEK_API_KEY 未设置' });
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: '仅支持 POST 请求' });
   }
