@@ -354,22 +354,31 @@ async function analyzeBirthdays(comments, apiKey) {
 async function callDeepSeek(commentsText, apiKey) {
   const prompt = `你是一个生日日期识别助手。分析以下抖音评论内容，找出所有包含生日相关信息的评论。
 
-识别规则：
-1. 明显的生日日期：如 "12月25日"、"1月1日" 等
-2. 生日祝福：如 "生日快乐"、"祝你生日快乐"、"生快" 等
-3. 出生日期表达：如 "我是X月X日生的"、"我的生日是X月X日"
-4. 星座相关：如 "天蝎座"、"处女座" 等（同时输出日期范围）
-5. 日期格式：可能包含"农历"、"阴历"等前缀
+识别规则（按优先级）：
+1. ⭐ 四位数字生日（最常见！）：如 "0214"、"1201"、"0315"，前两位是月份，后两位是日期。
+   例如 "0214" → "2月14日"，"1201" → "12月1日"，"0125" → "1月25日"，"1128" → "11月28日"
+   ⚠️ 重要：只要评论中出现形如 XXXX 的四位数字（且前两位01-12，后两位01-31），就应当识别为生日！
+2. 带分隔符的生日："12-25"、"12/25"、"12.25"、"12：25" → "12月25日"
+3. 明显的生日日期："12月25日"、"1月1日" 
+4. 生日描述："我生日"、"我的生日"、"破蛋日"、"生日是" 后面跟着的数字或日期
+5. 生日祝福："生日快乐"、"祝你生日快乐"、"生快"、"生日快" → type为"wish"，date可用上下文中推断的日期或空字符串
+6. 星座相关："天蝎座"、"处女座" → type为"zodiac"，date填星座名
+7. 年份+生日："03年"、"2003"、"03的" 结合上下文识别生日
+
+特殊情况：
+- "0229" → "2月29日"（闰年生日）
+- 数字出现在表情符号中间也识别，如 "🎂0214🎂"
+- 如果评论是纯数字如 "0214" 也要识别
 
 对于每条匹配的评论，提取：
 - "commentIndex": 评论序号（数字）
-- "date": 提取到的日期（如 "12月25日"，无明确日期则用星座代替）
-- "type": 类型（"birthday"=明确生日, "zodiac"=星座, "wish"=生日祝福）
+- "date": 提取到的日期（格式统一为 "X月X日"，如 "2月14日"）
+- "type": "birthday"（明确生日日期）、"wish"（生日祝福）、"zodiac"（星座）
 - "originalText": 评论原文
 
 请严格以 JSON 数组格式返回，不要包含其他内容：
 [
-  { "commentIndex": 1, "date": "12月25日", "type": "birthday", "originalText": "我生日是12月25日" }
+  { "commentIndex": 1, "date": "2月14日", "type": "birthday", "originalText": "0214" }
 ]
 
 如果没有找到任何生日相关信息，返回空数组 []。
@@ -387,7 +396,7 @@ ${commentsText}`;
       body: JSON.stringify({
         model: 'deepseek-chat',
         messages: [
-          { role: 'system', content: '你是一个精确的日期识别助手，只返回JSON格式数据。' },
+          { role: 'system', content: '你是一个精确的日期识别助手。尤其擅长识别抖音评论中的四位数字生日（如0214表示2月14日）。只返回JSON格式数据。' },
           { role: 'user', content: prompt },
         ],
         temperature: 0.1,
@@ -407,12 +416,49 @@ ${commentsText}`;
     const jsonMatch = content.match(/\[[\s\S]*\]/);
     if (!jsonMatch) return [];
 
-    return JSON.parse(jsonMatch[0]);
+    const aiResults = JSON.parse(jsonMatch[0]);
+
+    const regexResults = regexExtractBirthdays(commentsText, aiResults.length);
+
+    const merged = [...aiResults];
+    for (const r of regexResults) {
+      const exists = merged.some(m => m.commentIndex === r.commentIndex);
+      if (!exists) merged.push(r);
+    }
+
+    return merged;
   } catch (err) {
     console.error('DeepSeek 调用失败:', err);
     return [];
   }
 }
+
+function regexExtractBirthdays(commentsText, aiCount) {
+   const results = [];
+   const lines = commentsText.split('\n');
+
+   for (const line of lines) {
+     const idxMatch = line.match(/^\[(\d+)\]/);
+     if (!idxMatch) continue;
+     const commentIndex = parseInt(idxMatch[1], 10);
+     const text = line.replace(/^\[\d+\]\s*/, '').trim();
+
+     const allDigits = [...text.matchAll(/\b(\d{4})\b/g)];
+
+     for (const match of allDigits) {
+       const digits = match[1];
+       const month = parseInt(digits.substring(0, 2), 10);
+       const day = parseInt(digits.substring(2, 4), 10);
+       if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+         results.push({ commentIndex, date: `${month}月${day}日`, type: 'birthday', originalText: text });
+         break;
+       }
+     }
+   }
+
+   const maxExtra = Math.max(0, 50 - aiCount);
+   return results.slice(0, maxExtra);
+ }
 
 function calculateStats(comments, birthdays) {
   const totalComments = comments.length;
