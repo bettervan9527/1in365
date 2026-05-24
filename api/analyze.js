@@ -181,6 +181,7 @@ function extractCommentsFromRenderData(data, maxCount) {
           user: c.user?.nickname || c.user_name || '匿名',
           diggCount: c.digg_count || 0,
           createTime: c.create_time || 0,
+          ipLabel: c.ip_label || c.user?.ip_location || '',
           replyCount: c.reply_comment_total || 0,
         });
       }
@@ -205,6 +206,7 @@ function extractCommentsFromSSR(data, maxCount) {
             user: c.user?.nickname || c.author?.name || '匿名',
             diggCount: c.digg_count || c.likeCount || 0,
             createTime: c.create_time || c.createTime || 0,
+            ipLabel: c.ip_label || c.user?.ip_location || '',
             replyCount: c.reply_comment_total || c.replyCount || 0,
           });
         }

@@ -606,6 +606,193 @@
             color: var(--color-green-link);
         }
 
+        .export-btn {
+            padding: 6px 16px;
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 9999px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            font-family: var(--font-primary);
+            transition: all 0.2s;
+            white-space: nowrap;
+            margin-left: auto;
+        }
+
+        .export-btn:hover {
+            border-color: var(--color-green);
+            color: var(--color-green);
+            background: rgba(62, 207, 142, 0.06);
+        }
+
+        .export-btn:active {
+            transform: scale(0.96);
+        }
+
+        .export-btn-group {
+            display: flex;
+            gap: 8px;
+            margin-left: auto;
+        }
+
+        .export-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 18px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .export-toolbar .toolbar-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-muted);
+            white-space: nowrap;
+            letter-spacing: 0.5px;
+        }
+
+        .export-toolbar .toolbar-divider {
+            width: 1px;
+            height: 20px;
+            background: var(--border-color);
+            margin: 0 2px;
+        }
+
+        .export-menu {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .export-menu-trigger {
+            padding: 6px 14px;
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 9999px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            font-family: var(--font-primary);
+            transition: all 0.2s;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .export-menu-trigger:hover {
+            border-color: var(--color-green);
+            color: var(--color-green);
+            background: rgba(62, 207, 142, 0.06);
+        }
+
+        .export-menu-trigger .caret {
+            font-size: 9px;
+            opacity: 0.6;
+            transition: transform 0.2s;
+        }
+
+        .export-menu.open .export-menu-trigger .caret {
+            transform: rotate(180deg);
+        }
+
+        .export-menu-dropdown {
+            display: none;
+            position: absolute;
+            top: calc(100% + 6px);
+            right: 0;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            min-width: 140px;
+            padding: 4px;
+            z-index: 100;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+        }
+
+        .export-menu.open .export-menu-dropdown {
+            display: block;
+        }
+
+        .export-menu-dropdown button {
+            display: block;
+            width: 100%;
+            padding: 8px 14px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 12px;
+            cursor: pointer;
+            text-align: left;
+            border-radius: 6px;
+            font-family: var(--font-primary);
+            transition: all 0.15s;
+        }
+
+        .export-menu-dropdown button:hover {
+            background: var(--bg-surface);
+            color: var(--color-green);
+        }
+
+        .export-menu-dropdown button.active {
+            color: var(--color-green);
+            font-weight: 500;
+        }
+
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            pointer-events: none;
+        }
+
+        .toast {
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--color-off-white);
+            background: var(--color-near-black);
+            border: 1px solid var(--color-border-dark);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+            animation: toastIn 0.3s ease, toastOut 0.3s ease 2.2s forwards;
+            pointer-events: auto;
+            max-width: 360px;
+        }
+
+        .toast.success {
+            border-color: var(--color-green-border);
+            color: var(--color-green);
+            background: rgba(62, 207, 142, 0.1);
+        }
+
+        .toast.warning {
+            border-color: rgba(245, 217, 10, 0.3);
+            color: var(--color-yellow);
+            background: rgba(245, 217, 10, 0.08);
+        }
+
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateX(40px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes toastOut {
+            from { opacity: 1; transform: translateX(0); }
+            to { opacity: 0; transform: translateX(40px); }
+        }
+
         @media (max-width: 700px) {
             body { padding: 8px; }
 
@@ -635,6 +822,11 @@
             .comment-list { max-height: 300px; }
 
             .input-section { padding: 16px; }
+
+            .export-toolbar { flex-direction: column; align-items: flex-start; gap: 8px; }
+            .export-toolbar .toolbar-divider { display: none; }
+            .toast-container { left: 12px; right: 12px; top: 10px; }
+            .toast { max-width: 100%; }
         }
     </style>
 </head>
@@ -694,6 +886,48 @@
                     </div>
 
                     <div class="divider"></div>
+
+                    <div class="export-toolbar" id="exportToolbar">
+                        <span class="toolbar-label">📤 导出数据</span>
+                        <span class="toolbar-divider"></span>
+                        <div class="export-menu" id="exportStatsMenu">
+                            <button class="export-menu-trigger" onclick="toggleExportMenu('exportStatsMenu')">
+                                📊 统计摘要 <span class="caret">▼</span>
+                            </button>
+                            <div class="export-menu-dropdown">
+                                <button class="active" onclick="exportStatsCSV()">CSV 格式</button>
+                                <button onclick="exportStatsJSON()">JSON 格式</button>
+                            </div>
+                        </div>
+                        <div class="export-menu" id="exportAnalysisMenu">
+                            <button class="export-menu-trigger" onclick="toggleExportMenu('exportAnalysisMenu')">
+                                📋 分析结果 <span class="caret">▼</span>
+                            </button>
+                            <div class="export-menu-dropdown">
+                                <button class="active" onclick="exportAnalysisCSV()">CSV 格式</button>
+                                <button onclick="exportAnalysisJSON()">JSON 格式</button>
+                            </div>
+                        </div>
+                        <div class="export-menu" id="exportCommentsMenu">
+                            <button class="export-menu-trigger" onclick="toggleExportMenu('exportCommentsMenu')">
+                                💬 评论原文 <span class="caret">▼</span>
+                            </button>
+                            <div class="export-menu-dropdown">
+                                <button class="active" onclick="exportCommentsCSV()">CSV 格式</button>
+                                <button onclick="exportCommentsJSON()">JSON 格式</button>
+                            </div>
+                        </div>
+                        <span class="toolbar-divider"></span>
+                        <div class="export-menu" id="exportFullMenu">
+                            <button class="export-menu-trigger" onclick="toggleExportMenu('exportFullMenu')">
+                                📦 全部报告 <span class="caret">▼</span>
+                            </button>
+                            <div class="export-menu-dropdown">
+                                <button class="active" onclick="exportFullReportCSV()">CSV 格式</button>
+                                <button onclick="exportFullReportJSON()">JSON 格式</button>
+                            </div>
+                        </div>
+                    </div>
 
                     <div class="section-title">
                         <span>生日日期分布</span>
@@ -818,6 +1052,8 @@
         </div>
 
     </div>
+
+    <div class="toast-container" id="toastContainer"></div>
 
     <script>
         let chartInstance = null;
@@ -1102,6 +1338,203 @@
             const isLight = document.body.classList.toggle('light-mode');
             document.getElementById('themeToggle').textContent = isLight ? '☀️' : '🌙';
             localStorage.setItem('theme', isLight ? 'light' : 'dark');
+        }
+
+        function csvEscape(val) {
+            return '"' + String(val).replace(/"/g, '""') + '"';
+        }
+
+        function buildCSV(rows) {
+            const BOM = '\uFEFF';
+            return BOM + rows.map(row => row.map(csvEscape).join(',')).join('\n');
+        }
+
+        function downloadBlob(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function downloadCSV(rows, filename) {
+            const blob = new Blob([buildCSV(rows)], { type: 'text/csv;charset=utf-8;' });
+            downloadBlob(blob, filename);
+        }
+
+        function downloadJSON(data, filename) {
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8;' });
+            downloadBlob(blob, filename);
+        }
+
+        function toast(message, type) {
+            const container = document.getElementById('toastContainer');
+            const el = document.createElement('div');
+            el.className = 'toast' + (type ? ' ' + type : '');
+            el.textContent = message;
+            container.appendChild(el);
+            setTimeout(function () {
+                if (el.parentNode) el.parentNode.removeChild(el);
+            }, 2600);
+        }
+
+        function toggleExportMenu(menuId) {
+            var menu = document.getElementById(menuId);
+            var isOpen = menu.classList.contains('open');
+            document.querySelectorAll('.export-menu.open').forEach(function (m) {
+                m.classList.remove('open');
+            });
+            if (!isOpen) {
+                menu.classList.add('open');
+            }
+        }
+
+        document.addEventListener('click', function (e) {
+            if (!e.target.closest('.export-menu')) {
+                document.querySelectorAll('.export-menu.open').forEach(function (m) {
+                    m.classList.remove('open');
+                });
+            }
+        });
+
+        function exportStatsCSV() {
+            if (!currentData || !currentData.stats) {
+                toast('暂无统计数据可导出', 'warning');
+                return;
+            }
+            var s = currentData.stats;
+            var rows = [
+                ['指标', '数值'],
+                ['评论总数', s.totalComments],
+                ['生日提及数', s.totalBirthdayMentions],
+                ['提及率', s.mentionRate + '%'],
+                ['不同日期数', s.topDates ? s.topDates.length : 0],
+                ['生日日期识别', s.typeBreakdown ? s.typeBreakdown.birthday : 0],
+                ['生日祝福识别', s.typeBreakdown ? s.typeBreakdown.wish : 0],
+                ['星座识别', s.typeBreakdown ? s.typeBreakdown.zodiac : 0],
+                [''],
+                ['Top 日期排行'],
+                ['日期', '出现次数'],
+            ];
+            if (s.topDates) {
+                s.topDates.forEach(function (d) {
+                    rows.push([d.date, d.count]);
+                });
+            }
+            downloadCSV(rows, '统计摘要.csv');
+            toast('✅ 统计摘要已导出为 CSV');
+        }
+
+        function exportStatsJSON() {
+            if (!currentData || !currentData.stats) {
+                toast('暂无统计数据可导出', 'warning');
+                return;
+            }
+            downloadJSON(currentData.stats, '统计摘要.json');
+            toast('✅ 统计摘要已导出为 JSON');
+        }
+
+        function exportAnalysisCSV() {
+            if (!currentData || !currentData.birthdays || currentData.birthdays.length === 0) {
+                toast('暂无分析结果可导出', 'warning');
+                return;
+            }
+            var typeLabels = { birthday: '生日日期', wish: '生日祝福', zodiac: '星座' };
+            var rows = [['序号', '类型', '日期/星座', '评论内容']];
+            currentData.birthdays.forEach(function (b) {
+                rows.push([b.commentIndex, typeLabels[b.type] || b.type, b.date || '', b.originalText || '']);
+            });
+            downloadCSV(rows, '评论分析结果.csv');
+            toast('✅ 分析结果已导出为 CSV（共 ' + currentData.birthdays.length + ' 条）');
+        }
+
+        function exportAnalysisJSON() {
+            if (!currentData || !currentData.birthdays || currentData.birthdays.length === 0) {
+                toast('暂无分析结果可导出', 'warning');
+                return;
+            }
+            downloadJSON(currentData.birthdays, '评论分析结果.json');
+            toast('✅ 分析结果已导出为 JSON（共 ' + currentData.birthdays.length + ' 条）');
+        }
+
+        function exportCommentsCSV() {
+            if (!currentData || !currentData.comments || currentData.comments.length === 0) {
+                toast('暂无评论原文可导出', 'warning');
+                return;
+            }
+            var rows = [['序号', '用户名', '评论内容', '点赞数']];
+            currentData.comments.forEach(function (c, i) {
+                rows.push([i + 1, c.user || '匿名', c.text || '', c.diggCount || 0]);
+            });
+            downloadCSV(rows, '评论原文.csv');
+            toast('✅ 评论原文已导出为 CSV（共 ' + currentData.comments.length + ' 条）');
+        }
+
+        function exportCommentsJSON() {
+            if (!currentData || !currentData.comments || currentData.comments.length === 0) {
+                toast('暂无评论原文可导出', 'warning');
+                return;
+            }
+            downloadJSON(currentData.comments, '评论原文.json');
+            toast('✅ 评论原文已导出为 JSON（共 ' + currentData.comments.length + ' 条）');
+        }
+
+        function exportFullReportCSV() {
+            if (!currentData) {
+                toast('暂无数据可导出', 'warning');
+                return;
+            }
+            var s = currentData.stats || {};
+            var rows = [];
+            rows.push(['========================================']);
+            rows.push(['  评论生日分析 - 综合报告']);
+            rows.push(['========================================']);
+            rows.push(['']);
+            rows.push(['【统计摘要】']);
+            rows.push(['指标', '数值']);
+            rows.push(['评论总数', s.totalComments]);
+            rows.push(['生日提及数', s.totalBirthdayMentions]);
+            rows.push(['提及率', s.mentionRate + '%']);
+            rows.push(['不同日期数', s.topDates ? s.topDates.length : 0]);
+            rows.push(['']);
+            rows.push(['【Top 日期排行】']);
+            rows.push(['日期', '出现次数']);
+            if (s.topDates) {
+                s.topDates.forEach(function (d) { rows.push([d.date, d.count]); });
+            }
+            rows.push(['']);
+            rows.push(['【类型分布】']);
+            rows.push(['类型', '数量']);
+            rows.push(['生日日期', s.typeBreakdown ? s.typeBreakdown.birthday : 0]);
+            rows.push(['生日祝福', s.typeBreakdown ? s.typeBreakdown.wish : 0]);
+            rows.push(['星座', s.typeBreakdown ? s.typeBreakdown.zodiac : 0]);
+            rows.push(['']);
+            rows.push(['【分析结果明细】']);
+            rows.push(['序号', '类型', '日期/星座', '评论内容']);
+            var typeLabels = { birthday: '生日日期', wish: '生日祝福', zodiac: '星座' };
+            (currentData.birthdays || []).forEach(function (b) {
+                rows.push([b.commentIndex, typeLabels[b.type] || b.type, b.date || '', b.originalText || '']);
+            });
+            rows.push(['']);
+            rows.push(['【评论原文】']);
+            rows.push(['序号', '用户名', '评论内容', '点赞数']);
+            (currentData.comments || []).forEach(function (c, i) {
+                rows.push([i + 1, c.user || '匿名', c.text || '', c.diggCount || 0]);
+            });
+            downloadCSV(rows, '评论分析综合报告.csv');
+            toast('✅ 综合报告已导出为 CSV');
+        }
+
+        function exportFullReportJSON() {
+            if (!currentData) {
+                toast('暂无数据可导出', 'warning');
+                return;
+            }
+            downloadJSON(currentData, '评论分析综合报告.json');
+            toast('✅ 综合报告已导出为 JSON');
         }
 
         (function initTheme() {
