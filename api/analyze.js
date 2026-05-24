@@ -35,7 +35,11 @@ export default async function handler(req, res) {
 
     const comments = await fetchDouyinComments(awemeId, maxComments);
     if (!comments || comments.length === 0) {
-      return res.status(404).json({ error: '未获取到评论，视频可能不存在或评论已关闭' });
+      return res.status(404).json({
+        error: '未获取到评论。可能原因：1) 视频评论区已关闭  2) 该视频暂无评论  3) 抖音接口限制，请稍后重试',
+        videoId: awemeId,
+        success: false,
+      });
     }
 
     const analysis = await analyzeBirthdays(comments, DEEPSEEK_API_KEY);
@@ -97,6 +101,126 @@ async function extractAwemeId(url) {
 }
 
 async function fetchDouyinComments(awemeId, maxCount) {
+  let comments = await tryApiV1(awemeId, maxCount);
+  if (comments.length > 0) return comments;
+
+  comments = await tryApiV2(awemeId, maxCount);
+  if (comments.length > 0) return comments;
+
+  comments = await tryScrapePage(awemeId, maxCount);
+
+  return comments;
+}
+
+async function tryScrapePage(awemeId, maxCount) {
+  try {
+    const resp = await fetch(`https://www.douyin.com/video/${awemeId}`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml',
+        'Accept-Language': 'zh-CN,zh;q=0.9',
+      },
+    });
+
+    if (!resp.ok) return [];
+
+    const html = await resp.text();
+
+    const jsonMatch = html.match(/<script[^>]*id="RENDER_DATA"[^>]*>([\s\S]*?)<\/script>/);
+    if (jsonMatch) {
+      try {
+        const decoded = decodeURIComponent(jsonMatch[1]);
+        const renderData = JSON.parse(decoded);
+        const comments = extractCommentsFromRenderData(renderData, maxCount);
+        if (comments.length > 0) return comments;
+      } catch {}
+    }
+
+    const serverData = html.match(/window\._ROUTER_DATA\s*=\s*({[\s\S]*?})<\/script>/);
+    if (serverData) {
+      try {
+        const data = JSON.parse(serverData[1]);
+        const comments = extractCommentsFromSSR(data, maxCount);
+        if (comments.length > 0) return comments;
+      } catch {}
+    }
+  } catch {}
+
+  return [];
+}
+
+function extractCommentsFromRenderData(data, maxCount) {
+  const result = [];
+  try {
+    let commentList = null;
+    const search = (obj) => {
+      if (!obj || typeof obj !== 'object') return;
+      if (Array.isArray(obj)) {
+        for (const item of obj) search(item);
+        return;
+      }
+      if (obj.comments && Array.isArray(obj.comments)) {
+        commentList = obj.comments;
+        return;
+      }
+      if (obj.comment && Array.isArray(obj.comment)) {
+        commentList = obj.comment;
+        return;
+      }
+      for (const key of Object.keys(obj)) {
+        if (key.startsWith('__')) continue;
+        search(obj[key]);
+      }
+    };
+    search(data);
+
+    if (commentList) {
+      for (const c of commentList.slice(0, maxCount)) {
+        result.push({
+          text: c.text || '',
+          user: c.user?.nickname || c.user_name || '匿名',
+          diggCount: c.digg_count || 0,
+          createTime: c.create_time || 0,
+          replyCount: c.reply_comment_total || 0,
+        });
+      }
+    }
+  } catch {}
+  return result;
+}
+
+function extractCommentsFromSSR(data, maxCount) {
+  const result = [];
+  try {
+    const search = (obj, depth = 0) => {
+      if (!obj || typeof obj !== 'object' || depth > 20) return;
+      if (Array.isArray(obj)) {
+        for (const item of obj) search(item, depth + 1);
+        return;
+      }
+      if (obj.commentList && Array.isArray(obj.commentList)) {
+        for (const c of obj.commentList.slice(0, maxCount)) {
+          result.push({
+            text: c.text || c.content || '',
+            user: c.user?.nickname || c.author?.name || '匿名',
+            diggCount: c.digg_count || c.likeCount || 0,
+            createTime: c.create_time || c.createTime || 0,
+            replyCount: c.reply_comment_total || c.replyCount || 0,
+          });
+        }
+        return;
+      }
+      for (const key of Object.keys(obj)) {
+        if (key.startsWith('__')) continue;
+        search(obj[key], depth + 1);
+      }
+    };
+    search(data);
+  } catch {}
+  return result;
+}
+
+async function tryApiV1(awemeId, maxCount) {
   const allComments = [];
   let cursor = 0;
   const limit = Math.min(maxCount, 500);
@@ -107,7 +231,7 @@ async function fetchDouyinComments(awemeId, maxCount) {
         new URLSearchParams({
           aweme_id: awemeId,
           cursor: String(cursor),
-          count: '50',
+          count: '20',
           device_platform: 'webapp',
           aid: '6383',
           channel: 'channel_pc_web',
@@ -129,23 +253,17 @@ async function fetchDouyinComments(awemeId, maxCount) {
           'Referer': `https://www.douyin.com/video/${awemeId}`,
           'Accept': 'application/json, text/plain, */*',
           'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+          'Cookie': `ttwid=1|${Date.now()}|...; odin_tt=...; passport_csrf_token=...`,
         },
       });
 
-      if (!resp.ok) {
-        if (resp.status === 403) {
-          break;
-        }
-        break;
-      }
+      if (!resp.ok) break;
 
       const data = await resp.json();
+      const commentList = data?.comments || data?.data?.comments || [];
+      if (commentList.length === 0) break;
 
-      if (!data || !data.comments || data.comments.length === 0) {
-        break;
-      }
-
-      for (const c of data.comments) {
+      for (const c of commentList) {
         allComments.push({
           text: c.text || '',
           user: c.user?.nickname || '匿名',
@@ -155,10 +273,57 @@ async function fetchDouyinComments(awemeId, maxCount) {
         });
       }
 
-      if (!data.has_more) {
-        break;
+      if (!data.has_more && !data.hasMore) break;
+      cursor = data.cursor || cursor + 20;
+    } catch {
+      break;
+    }
+  }
+
+  return allComments;
+}
+
+async function tryApiV2(awemeId, maxCount) {
+  const allComments = [];
+  let cursor = 0;
+  const limit = Math.min(maxCount, 500);
+
+  while (allComments.length < limit) {
+    try {
+      const url = `https://www.iesdouyin.com/web/api/v2/comment/list/?` +
+        new URLSearchParams({
+          aweme_id: awemeId,
+          cursor: String(cursor),
+          count: '20',
+        });
+
+      const resp = await fetch(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Referer': 'https://www.douyin.com/',
+          'Accept': 'application/json, text/plain, */*',
+          'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+        },
+      });
+
+      if (!resp.ok) break;
+
+      const data = await resp.json();
+      const commentList = data?.comments || data?.data?.comments || [];
+      if (commentList.length === 0) break;
+
+      for (const c of commentList) {
+        allComments.push({
+          text: c.text || '',
+          user: c.user?.nickname || '匿名',
+          diggCount: c.digg_count || 0,
+          createTime: c.create_time || 0,
+          replyCount: c.reply_comment_total || 0,
+        });
       }
-      cursor = data.cursor || cursor + 50;
+
+      if (!data.has_more && !data.hasMore) break;
+      cursor = data.cursor || cursor + 20;
     } catch {
       break;
     }
