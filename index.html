@@ -684,7 +684,7 @@
 
                 <div class="section-title" style="margin-top: 4px;">
                     <span>月份出生率分布</span>
-                    <span class="badge">参考数据</span>
+                    <span class="badge" style="background: #10b981;">参考数据</span>
                 </div>
 
                 <div class="chart-container short">
@@ -842,7 +842,7 @@
                         {
                             label: '考虑闰年' + (leapOn ? ' ✓' : ''),
                             data: leapData.data,
-                            borderColor: 'var(--color-green)',
+                            borderColor: '#667eea',
                             borderWidth: leapOn ? 3 : 1.5,
                             borderDash: leapOn ? [] : [4, 4],
                             pointRadius: 0,
@@ -852,7 +852,7 @@
                         {
                             label: '不考虑闰年' + (!leapOn ? ' ✓' : ''),
                             data: nonLeapData.data,
-                            borderColor: 'var(--color-tomato)',
+                            borderColor: '#10b981',
                             borderWidth: !leapOn ? 3 : 1.5,
                             borderDash: !leapOn ? [] : [4, 4],
                             pointRadius: 0,
@@ -867,19 +867,9 @@
                     plugins: {
                         legend: {
                             position: 'top',
-                            labels: {
-                                usePointStyle: true,
-                                padding: 14,
-                                font: { size: 11, family: "system-ui" },
-                                color: 'var(--text-muted)',
-                            }
+                            labels: { usePointStyle: true, padding: 14, font: { size: 12 } }
                         },
                         tooltip: {
-                            backgroundColor: 'var(--bg-card)',
-                            titleColor: 'var(--text-primary)',
-                            bodyColor: 'var(--text-secondary)',
-                            borderColor: 'var(--border-color)',
-                            borderWidth: 1,
                             callbacks: {
                                 label: function (ctx) {
                                     return ctx.dataset.label.replace(' ✓', '') + ': ' + ctx.parsed.y.toFixed(2) + '%';
@@ -889,13 +879,11 @@
                     },
                     scales: {
                         x: {
-                            title: { display: true, text: '评论区人数', font: { size: 11, weight: '500' }, color: 'var(--text-muted)' },
+                            title: { display: true, text: '评论区人数', font: { size: 12, weight: '600' } },
                             grid: { display: false },
                             ticks: {
                                 autoSkip: true,
                                 maxTicksLimit: 10,
-                                color: 'var(--text-muted)',
-                                font: { size: 11 },
                                 callback: function (v) {
                                     if (v === 1 || v % 50 === 0) return v;
                                     return '';
@@ -903,11 +891,11 @@
                             }
                         },
                         y: {
-                            title: { display: true, text: '概率 (%)', font: { size: 11, weight: '500' }, color: 'var(--text-muted)' },
+                            title: { display: true, text: '概率 (%)', font: { size: 12, weight: '600' } },
                             min: 0,
                             max: 100,
-                            grid: { color: 'var(--border-subtle)' },
-                            ticks: { stepSize: 10, callback: function (v) { return v + '%'; }, color: 'var(--text-muted)', font: { size: 11 } }
+                            grid: { color: 'rgba(0,0,0,0.06)' },
+                            ticks: { stepSize: 10, callback: function (v) { return v + '%'; } }
                         }
                     },
                     animation: { duration: 600, easing: 'easeOutQuart' }
@@ -938,7 +926,7 @@
                         {
                             label: '月/日匹配 ' + modeLabel,
                             data: monthDayData.data,
-                            borderColor: 'var(--color-green)',
+                            borderColor: '#667eea',
                             borderWidth: 2.5,
                             pointRadius: 0,
                             tension: 0.4,
@@ -947,7 +935,7 @@
                         {
                             label: '同年同月同日 ' + modeLabel,
                             data: ymdData.data,
-                            borderColor: 'var(--color-tomato)',
+                            borderColor: '#ef4444',
                             borderWidth: 2.5,
                             borderDash: [6, 3],
                             pointRadius: 0,
@@ -957,7 +945,7 @@
                         {
                             label: '生日悖论 ' + modeLabel,
                             data: paradoxData,
-                            borderColor: 'var(--color-yellow)',
+                            borderColor: '#f59e0b',
                             borderWidth: 2.5,
                             borderDash: [2, 4],
                             pointRadius: 0,
@@ -972,19 +960,9 @@
                     plugins: {
                         legend: {
                             position: 'top',
-                            labels: {
-                                usePointStyle: true,
-                                padding: 14,
-                                font: { size: 11, family: "system-ui" },
-                                color: 'var(--text-muted)',
-                            }
+                            labels: { usePointStyle: true, padding: 14, font: { size: 12 } }
                         },
                         tooltip: {
-                            backgroundColor: 'var(--bg-card)',
-                            titleColor: 'var(--text-primary)',
-                            bodyColor: 'var(--text-secondary)',
-                            borderColor: 'var(--border-color)',
-                            borderWidth: 1,
                             callbacks: {
                                 label: function (ctx) {
                                     return ctx.dataset.label.replace(' ' + modeLabel, '') + ': ' + ctx.parsed.y.toFixed(4) + '%';
@@ -994,13 +972,11 @@
                     },
                     scales: {
                         x: {
-                            title: { display: true, text: '评论区人数', font: { size: 11, weight: '500' }, color: 'var(--text-muted)' },
+                            title: { display: true, text: '评论区人数', font: { size: 12, weight: '600' } },
                             grid: { display: false },
                             ticks: {
                                 autoSkip: true,
                                 maxTicksLimit: 10,
-                                color: 'var(--text-muted)',
-                                font: { size: 11 },
                                 callback: function (v) {
                                     if (v === 1 || v % 20 === 0) return v;
                                     return '';
@@ -1008,11 +984,11 @@
                             }
                         },
                         y: {
-                            title: { display: true, text: '概率 (%)', font: { size: 11, weight: '500' }, color: 'var(--text-muted)' },
+                            title: { display: true, text: '概率 (%)', font: { size: 12, weight: '600' } },
                             min: 0,
                             max: 100,
-                            grid: { color: 'var(--border-subtle)' },
-                            ticks: { stepSize: 10, callback: function (v) { return v + '%'; }, color: 'var(--text-muted)', font: { size: 11 } }
+                            grid: { color: 'rgba(0,0,0,0.06)' },
+                            ticks: { stepSize: 10, callback: function (v) { return v + '%'; } }
                         }
                     },
                     animation: { duration: 600, easing: 'easeOutQuart' }
@@ -1027,19 +1003,16 @@
             const tbody = document.getElementById('neededTable');
             tbody.innerHTML = '';
 
-            targets.forEach(function (target, ti) {
+            targets.forEach(function (target) {
                 const nMd = calcNeededMonthDay(target, leapOn);
                 const nYmd = calcNeededYmd(target, range.start, range.end, leapOn);
                 const nPara = calcNeededParadox(target, leapOn);
                 const row = document.createElement('tr');
-                const pctLabel = (target * 100).toFixed(0) + '%';
-                const rowBg = ti === 0 ? 'rgba(62,207,142,0.06)' : ti === 1 ? 'rgba(245,217,10,0.04)' : 'rgba(229,72,77,0.05)';
-                row.style.background = rowBg;
                 row.innerHTML =
-                    '<td><strong style="font-size:15px;">' + pctLabel + '</strong></td>' +
-                    '<td>' + (nMd !== null ? '<strong>' + nMd.toLocaleString() + '</strong> 人' : '—') + '</td>' +
-                    '<td>' + (nYmd !== null ? '<strong>' + nYmd.toLocaleString() + '</strong> 人' : '—') + '</td>' +
-                    '<td style="color:var(--color-green);font-weight:600;">' + (nPara !== null ? '<strong>' + nPara + '</strong> 人' : '—') + '</td>';
+                    '<td>' + (target * 100).toFixed(0) + '%</td>' +
+                    '<td>' + (nMd !== null ? nMd.toLocaleString() + ' 人' : '—') + '</td>' +
+                    '<td>' + (nYmd !== null ? nYmd.toLocaleString() + ' 人' : '—') + '</td>' +
+                    '<td>' + (nPara !== null ? nPara + ' 人' : '—') + '</td>';
                 tbody.appendChild(row);
             });
         }
@@ -1090,30 +1063,30 @@
             const birthRates = [9.2, 8.2, 9.2, 7.4, 7.4, 7.2, 7.2, 7.4, 6.4, 6.0, 12.2, 12.6];
 
             birthRateChartInstance = new Chart(ctx, {
-                type: 'bar',
+                type: 'line',
                 data: {
                     labels: months,
                     datasets: [
                         {
                             label: '人口出生率 (%)',
                             data: birthRates,
-                            backgroundColor: months.map(function (_, i) {
-                                return i === 9 || i === 10
-                                    ? 'rgba(62, 207, 142, 0.75)'
-                                    : 'rgba(62, 207, 142, 0.35)';
-                            }),
-                            borderColor: 'rgba(62, 207, 142, 0.9)',
-                            borderWidth: 1,
-                            borderRadius: 6,
-                            borderSkipped: false,
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            borderWidth: 3,
+                            pointRadius: 5,
+                            pointBackgroundColor: '#10b981',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            pointHoverRadius: 7,
+                            tension: 0.3,
+                            fill: true,
                         },
                         {
                             label: '平均值',
                             data: Array(12).fill(birthRates.reduce((a, b) => a + b, 0) / 12),
-                            type: 'line',
-                            borderColor: 'var(--text-muted)',
+                            borderColor: '#9ca3af',
                             borderWidth: 2,
-                            borderDash: [4, 4],
+                            borderDash: [6, 3],
                             pointRadius: 0,
                             tension: 0,
                             fill: false,
@@ -1126,19 +1099,9 @@
                     plugins: {
                         legend: {
                             position: 'top',
-                            labels: {
-                                usePointStyle: true,
-                                padding: 16,
-                                font: { size: 11, family: "system-ui" },
-                                color: 'var(--text-muted)',
-                            }
+                            labels: { usePointStyle: true, padding: 14, font: { size: 12 } }
                         },
                         tooltip: {
-                            backgroundColor: 'var(--bg-card)',
-                            titleColor: 'var(--text-primary)',
-                            bodyColor: 'var(--text-secondary)',
-                            borderColor: 'var(--border-color)',
-                            borderWidth: 1,
                             callbacks: {
                                 label: function (ctx) {
                                     if (ctx.dataset.label === '平均值') {
@@ -1151,19 +1114,18 @@
                     },
                     scales: {
                         x: {
-                            title: { display: true, text: '月份', font: { size: 11, weight: '500' }, color: 'var(--text-muted)' },
+                            title: { display: true, text: '月份', font: { size: 12, weight: '600' } },
                             grid: { display: false },
-                            ticks: { color: 'var(--text-muted)', font: { size: 11 } },
                         },
                         y: {
-                            title: { display: true, text: '出生率 (%)', font: { size: 11, weight: '500' }, color: 'var(--text-muted)' },
+                            title: { display: true, text: '出生率 (%)', font: { size: 12, weight: '600' } },
                             min: 0,
                             max: 14,
-                            grid: { color: 'var(--border-subtle)' },
-                            ticks: { stepSize: 2, callback: function (v) { return v + '%'; }, color: 'var(--text-muted)', font: { size: 11 } }
+                            grid: { color: 'rgba(0,0,0,0.06)' },
+                            ticks: { stepSize: 2, callback: function (v) { return v + '%'; } }
                         }
                     },
-                    animation: { duration: 600, easing: 'easeOutQuart' }
+                    animation: { duration: 800, easing: 'easeOutQuart' }
                 }
             });
         }
