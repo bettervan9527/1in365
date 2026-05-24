@@ -606,37 +606,6 @@
             color: var(--color-green-link);
         }
 
-        .export-btn {
-            padding: 6px 16px;
-            background: transparent;
-            color: var(--text-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 9999px;
-            font-size: 12px;
-            font-weight: 500;
-            cursor: pointer;
-            font-family: var(--font-primary);
-            transition: all 0.2s;
-            white-space: nowrap;
-            margin-left: auto;
-        }
-
-        .export-btn:hover {
-            border-color: var(--color-green);
-            color: var(--color-green);
-            background: rgba(62, 207, 142, 0.06);
-        }
-
-        .export-btn:active {
-            transform: scale(0.96);
-        }
-
-        .export-btn-group {
-            display: flex;
-            gap: 8px;
-            margin-left: auto;
-        }
-
         .export-toolbar {
             display: flex;
             align-items: center;
@@ -1296,12 +1265,18 @@
             for (let i = 0; i < comments.length; i++) {
                 const c = comments[i];
                 const highlighted = highlightBirthdays(c.text, currentData.birthdays || [], i + 1);
+                var timeStr = c.createTime ? formatTime(c.createTime) : '';
+                var ipStr = c.ipLabel ? ' 📍' + escapeHtml(c.ipLabel) : '';
+                var metaParts = ['👤 ' + escapeHtml(c.user)];
+                if (timeStr) metaParts.push(timeStr);
+                if (ipStr) metaParts.push(ipStr);
+                metaParts.push('👍 ' + c.diggCount);
                 html +=
                     '<div class="comment-item">' +
                     '<span class="idx">#' + (i + 1) + '</span>' +
                     '<div>' +
                     '<div class="text">' + highlighted + '</div>' +
-                    '<div class="meta">👤 ' + escapeHtml(c.user) + ' &middot; 👍 ' + c.diggCount + '</div>' +
+                    '<div class="meta">' + metaParts.join(' &middot; ') + '</div>' +
                     '</div>' +
                     '</div>';
             }
@@ -1325,6 +1300,24 @@
             const div = document.createElement('div');
             div.textContent = str;
             return div.innerHTML;
+        }
+
+        function formatTime(ts) {
+            if (!ts) return '';
+            var d = new Date(ts * 1000);
+            var now = new Date();
+            var diff = now - d;
+            if (diff < 60000) return '刚刚';
+            if (diff < 3600000) return Math.floor(diff / 60000) + '分钟前';
+            if (diff < 86400000) return Math.floor(diff / 3600000) + '小时前';
+            if (diff < 172800000) return '昨天 ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+            var month = d.getMonth() + 1;
+            var day = d.getDate();
+            return month + '/' + day + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+        }
+
+        function pad(n) {
+            return n < 10 ? '0' + n : '' + n;
         }
 
         function switchTab(tabId, btn) {
@@ -1465,9 +1458,10 @@
                 toast('暂无评论原文可导出', 'warning');
                 return;
             }
-            var rows = [['序号', '用户名', '评论内容', '点赞数']];
+            var rows = [['序号', '用户名', '评论内容', '发布时间', 'IP属地', '点赞数']];
             currentData.comments.forEach(function (c, i) {
-                rows.push([i + 1, c.user || '匿名', c.text || '', c.diggCount || 0]);
+                var time = c.createTime ? new Date(c.createTime * 1000).toLocaleString('zh-CN') : '—';
+                rows.push([i + 1, c.user || '匿名', c.text || '', time, c.ipLabel || '—', c.diggCount || 0]);
             });
             downloadCSV(rows, '评论原文.csv');
             toast('✅ 评论原文已导出为 CSV（共 ' + currentData.comments.length + ' 条）');
@@ -1520,9 +1514,10 @@
             });
             rows.push(['']);
             rows.push(['【评论原文】']);
-            rows.push(['序号', '用户名', '评论内容', '点赞数']);
+            rows.push(['序号', '用户名', '评论内容', '发布时间', 'IP属地', '点赞数']);
             (currentData.comments || []).forEach(function (c, i) {
-                rows.push([i + 1, c.user || '匿名', c.text || '', c.diggCount || 0]);
+                var time = c.createTime ? new Date(c.createTime * 1000).toLocaleString('zh-CN') : '—';
+                rows.push([i + 1, c.user || '匿名', c.text || '', time, c.ipLabel || '—', c.diggCount || 0]);
             });
             downloadCSV(rows, '评论分析综合报告.csv');
             toast('✅ 综合报告已导出为 CSV');
