@@ -149,18 +149,6 @@
             line-height: 1.6;
         }
 
-        .header .tag {
-            display: inline-block;
-            font-family: var(--font-mono);
-            font-size: 11px;
-            color: var(--color-green);
-            background: rgba(62, 207, 142, 0.08);
-            border: 1px solid var(--color-green-border);
-            padding: 4px 14px;
-            border-radius: 9999px;
-            margin-top: 12px;
-        }
-
         .body-content {
             padding: 24px 20px 28px;
         }
@@ -220,7 +208,6 @@
         .input-row {
             display: flex;
             gap: 12px;
-            align-items: flex-end;
         }
 
         .input-row .input-group {
@@ -238,11 +225,12 @@
             cursor: pointer;
             transition: border-color 0.2s, background 0.2s, opacity 0.2s;
             white-space: nowrap;
-            height: 42px;
             min-width: 110px;
             font-family: var(--font-primary);
             line-height: 1.14;
             opacity: 0.9;
+            align-self: flex-start;
+            margin-top: 25px;
         }
 
         .btn-primary:hover {
@@ -782,7 +770,7 @@
             .input-row { flex-direction: column; gap: 10px; }
             .input-row .input-group { margin-bottom: 0; }
 
-            .btn-primary { width: 100%; }
+            .btn-primary { width: 100%; margin-top: 0; }
 
             .chart-container { height: 260px; }
 
@@ -813,7 +801,6 @@
                 <div class="label">Douyin Comment Analyzer</div>
                 <h1>抖音评论生日分析器</h1>
                 <p>粘贴抖音视频链接，AI 自动识别评论区中的生日日期与祝福，<br>统计生日分布，发现与你同一天的人</p>
-                <span class="tag">🤖 接入 DeepSeek AI</span>
             </div>
             <div class="body-content">
 
