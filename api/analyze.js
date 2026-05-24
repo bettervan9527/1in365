@@ -21,7 +21,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: '仅支持 POST 请求' });
   }
 
-  const { videoUrl, maxComments = 100, mode = 'full' } = req.body || {};
+  const { videoUrl, maxComments = 500 } = req.body || {};
 
   if (!videoUrl) {
     return res.status(400).json({ error: '请提供抖音视频链接' });
@@ -39,16 +39,6 @@ export default async function handler(req, res) {
         error: '未获取到评论。可能原因：1) 视频评论区已关闭  2) 该视频暂无评论  3) 抖音接口限制，请稍后重试',
         videoId: awemeId,
         success: false,
-      });
-    }
-
-    // preview 模式：只返回评论总数
-    if (mode === 'preview') {
-      return res.status(200).json({
-        success: true,
-        videoId: awemeId,
-        totalComments: comments.length,
-        preview: true,
       });
     }
 
