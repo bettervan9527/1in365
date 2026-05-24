@@ -337,55 +337,164 @@ async function tryApiV2(awemeId, maxCount) {
 async function analyzeBirthdays(comments, apiKey) {
   if (!comments || comments.length === 0) return [];
 
-  const batchSize = 100;
   const allBirthdays = [];
 
+  const batchSize = 80;
   for (let i = 0; i < comments.length; i += batchSize) {
     const batch = comments.slice(i, i + batchSize);
-    const batchTexts = batch.map((c, idx) => `[${i + idx + 1}] ${c.text}`).join('\n');
 
-    const result = await callDeepSeek(batchTexts, apiKey);
-    if (result && result.length > 0) {
-      allBirthdays.push(...result);
+    const localResults = localExtract(batch, i);
+    for (const r of localResults) {
+      allBirthdays.push(r);
+    }
+
+    const foundIndexes = new Set(localResults.map(r => r.commentIndex));
+
+    const remainingLines = [];
+    for (let bi = 0; bi < batch.length; bi++) {
+      const idx = i + bi + 1;
+      if (!foundIndexes.has(idx)) {
+        remainingLines.push(`[${idx}] ${batch[bi].text}`);
+      }
+    }
+
+    if (remainingLines.length > 0) {
+      const aiResults = await callDeepSeek(remainingLines.join('\n'), apiKey);
+      for (const r of aiResults) {
+        allBirthdays.push(r);
+      }
     }
   }
 
   return allBirthdays;
 }
 
+function localExtract(batch, batchOffset) {
+  const results = [];
+
+  for (let bi = 0; bi < batch.length; bi++) {
+    const commentIndex = batchOffset + bi + 1;
+    const text = batch[bi].text || '';
+
+    const extracted = extractDateFromText(text, commentIndex);
+    if (extracted) {
+      results.push(extracted);
+      continue;
+    }
+
+    const wishResult = extractWish(text, commentIndex);
+    if (wishResult) {
+      results.push(wishResult);
+    }
+  }
+
+  return results;
+}
+
+function extractDateFromText(text, commentIndex) {
+  if (!text) return null;
+
+  const clean = text.replace(/[@#＠＃]+/g, '').replace(/https?:\/\/\S+/g, '');
+
+  const patterns = [
+    /(\d{1,2})月(\d{1,2})[日号]?/,
+    /(\d{1,2})[\.\-\/](\d{1,2})(?![0-9年月日号])/,
+    /(\d{1,2})[\.\-\/](\d{1,2})[日号]/,
+    /(\d{1,2})[：:](\d{1,2})/,
+    /[^0-9](\d{2})(\d{2})[^0-9]/,
+    /^(\d{2})(\d{2})$/,
+  ];
+
+  for (const pattern of patterns) {
+    const match = clean.match(pattern);
+    if (match) {
+      const month = parseInt(match[1], 10);
+      const day = parseInt(match[2], 10);
+      if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+        if (!(month === 2 && day > 29) && !([4, 6, 9, 11].includes(month) && day > 30)) {
+          return {
+            commentIndex,
+            date: `${month}月${day}日`,
+            type: 'birthday',
+            originalText: text,
+          };
+        }
+      }
+    }
+  }
+
+  const standaloneMatch = clean.match(/(?:^|[\s,，、。！？🎂🎉🎁❤✨💕\]])([01]\d)([0-3]\d)(?:$|[\s,，、。！？🎂🎉🎁❤✨💕\[])/);
+  if (standaloneMatch) {
+    const month = parseInt(standaloneMatch[1], 10);
+    const day = parseInt(standaloneMatch[2], 10);
+    if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+      if (!(month === 2 && day > 29) && !([4, 6, 9, 11].includes(month) && day > 30)) {
+        return {
+          commentIndex,
+          date: `${month}月${day}日`,
+          type: 'birthday',
+          originalText: text,
+        };
+      }
+    }
+  }
+
+  return null;
+}
+
+function extractWish(text, commentIndex) {
+  if (!text) return null;
+
+  const wishPatterns = [
+    /生日[快乐快快]/,
+    /生[日快]/,
+    /破蛋[日快乐]/,
+    /[Hh]appy\s*[Bb]irthday/,
+    /诞辰/,
+    /庆生/,
+  ];
+
+  for (const pattern of wishPatterns) {
+    if (pattern.test(text)) {
+      return {
+        commentIndex,
+        date: '',
+        type: 'wish',
+        originalText: text,
+      };
+    }
+  }
+
+  return null;
+}
+
 async function callDeepSeek(commentsText, apiKey) {
-  const prompt = `你是一个生日日期识别助手。分析以下抖音评论内容，找出所有包含生日相关信息的评论。
+  if (!commentsText || commentsText.trim().length === 0) return [];
+
+  const prompt = `你是抖音评论生日识别专家。识别以下评论中的生日信息。
 
 识别规则（按优先级）：
-1. ⭐ 四位数字生日（最常见！）：如 "0214"、"1201"、"0315"，前两位是月份，后两位是日期。
-   例如 "0214" → "2月14日"，"1201" → "12月1日"，"0125" → "1月25日"，"1128" → "11月28日"
-   ⚠️ 重要：只要评论中出现形如 XXXX 的四位数字（且前两位01-12，后两位01-31），就应当识别为生日！
-2. 带分隔符的生日："12-25"、"12/25"、"12.25"、"12：25" → "12月25日"
-3. 明显的生日日期："12月25日"、"1月1日" 
-4. 生日描述："我生日"、"我的生日"、"破蛋日"、"生日是" 后面跟着的数字或日期
-5. 生日祝福："生日快乐"、"祝你生日快乐"、"生快"、"生日快" → type为"wish"，date可用上下文中推断的日期或空字符串
-6. 星座相关："天蝎座"、"处女座" → type为"zodiac"，date填星座名
-7. 年份+生日："03年"、"2003"、"03的" 结合上下文识别生日
+⭐ 1. 四位数字 = 生日（抖音最常见！）：
+   "0214"→"2月14日", "1201"→"12月1日", "0229"→"2月29日"
+   前两位01-12=月份，后两位01-31=日期。即使被emoji包围也识别。
+⭐ 2. 中文日期格式："12月25日"、"1月1号"、"12.25"、"12-25"、"12/25"
+⭐ 3. 生日关键词附近数字："生日0214"、"我生日是5月20"
+⭐ 4. 生日祝福无日期→type="wish", date=""："生日快乐"、"生快"、"happy birthday"
+   但如果祝福旁有数字，优先提取数字作为date
+⭐ 5. 星座→type="zodiac", date=星座名：天蝎座、双子座...
+⭐ 6. 年龄+生日组合："03年"、"我03的"、"05的" → 结合数字推断
 
-特殊情况：
-- "0229" → "2月29日"（闰年生日）
-- 数字出现在表情符号中间也识别，如 "🎂0214🎂"
-- 如果评论是纯数字如 "0214" 也要识别
+重要排除规则：
+- 手机号、QQ号、微信号中的数字 NOT 生日
+- 年份(19xx/20xx) NOT 生日日期
+- 商品编号、价格 NOT 生日
+- 楼层、点赞数 NOT 生日
 
-对于每条匹配的评论，提取：
-- "commentIndex": 评论序号（数字）
-- "date": 提取到的日期（格式统一为 "X月X日"，如 "2月14日"）
-- "type": "birthday"（明确生日日期）、"wish"（生日祝福）、"zodiac"（星座）
-- "originalText": 评论原文
+每条结果格式：
+{"commentIndex":数字,"date":"X月X日","type":"birthday|wish|zodiac","originalText":"原文"}
+无日期时date可为""。
+严格返回JSON数组，无内容返回[]。
 
-请严格以 JSON 数组格式返回，不要包含其他内容：
-[
-  { "commentIndex": 1, "date": "2月14日", "type": "birthday", "originalText": "0214" }
-]
-
-如果没有找到任何生日相关信息，返回空数组 []。
-
-评论内容：
 ${commentsText}`;
 
   try {
@@ -398,17 +507,21 @@ ${commentsText}`;
       body: JSON.stringify({
         model: 'deepseek-chat',
         messages: [
-          { role: 'system', content: '你是一个精确的日期识别助手。尤其擅长识别抖音评论中的四位数字生日（如0214表示2月14日）。只返回JSON格式数据。' },
+          {
+            role: 'system',
+            content: '你是专业的抖音评论生日识别AI。核心能力：从短文本中识别四位数字(MMDD)生日、中文日期表达、星座提及。排除手机号/QQ号/价格等干扰。只返回JSON数组。',
+          },
           { role: 'user', content: prompt },
         ],
-        temperature: 0.1,
+        temperature: 0.05,
         max_tokens: 4096,
+        top_p: 0.9,
       }),
     });
 
     if (!resp.ok) {
       const errText = await resp.text();
-      console.error('DeepSeek API 错误:', resp.status, errText);
+      console.error('DeepSeek API 错误:', resp.status, errText.substring(0, 200));
       return [];
     }
 
@@ -418,49 +531,21 @@ ${commentsText}`;
     const jsonMatch = content.match(/\[[\s\S]*\]/);
     if (!jsonMatch) return [];
 
-    const aiResults = JSON.parse(jsonMatch[0]);
+    const results = JSON.parse(jsonMatch[0]);
 
-    const regexResults = regexExtractBirthdays(commentsText, aiResults.length);
-
-    const merged = [...aiResults];
-    for (const r of regexResults) {
-      const exists = merged.some(m => m.commentIndex === r.commentIndex);
-      if (!exists) merged.push(r);
+    const validated = [];
+    for (const r of results) {
+      if (typeof r.commentIndex !== 'number') continue;
+      if (r.type === 'birthday' && !r.date) continue;
+      validated.push(r);
     }
 
-    return merged;
+    return validated;
   } catch (err) {
-    console.error('DeepSeek 调用失败:', err);
+    console.error('DeepSeek 调用失败:', err.message);
     return [];
   }
 }
-
-function regexExtractBirthdays(commentsText, aiCount) {
-   const results = [];
-   const lines = commentsText.split('\n');
-
-   for (const line of lines) {
-     const idxMatch = line.match(/^\[(\d+)\]/);
-     if (!idxMatch) continue;
-     const commentIndex = parseInt(idxMatch[1], 10);
-     const text = line.replace(/^\[\d+\]\s*/, '').trim();
-
-     const allDigits = [...text.matchAll(/\b(\d{4})\b/g)];
-
-     for (const match of allDigits) {
-       const digits = match[1];
-       const month = parseInt(digits.substring(0, 2), 10);
-       const day = parseInt(digits.substring(2, 4), 10);
-       if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
-         results.push({ commentIndex, date: `${month}月${day}日`, type: 'birthday', originalText: text });
-         break;
-       }
-     }
-   }
-
-   const maxExtra = Math.max(0, 50 - aiCount);
-   return results.slice(0, maxExtra);
- }
 
 function calculateStats(comments, birthdays) {
   const totalComments = comments.length;
