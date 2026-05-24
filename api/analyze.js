@@ -50,6 +50,7 @@ export default async function handler(req, res) {
       success: true,
       videoId: awemeId,
       totalComments: comments.length,
+      requestedComments: maxComments,
       comments: comments.slice(0, 100),
       birthdays: analysis,
       stats,
@@ -225,15 +226,17 @@ function extractCommentsFromSSR(data, maxCount) {
 async function tryApiV1(awemeId, maxCount) {
   const allComments = [];
   let cursor = 0;
-  const limit = Math.min(maxCount, 500);
+  const limit = Math.min(maxCount, 200);
+  let consecutiveEmpty = 0;
+  const maxEmpty = 3; // 连续3次空结果则停止
 
-  while (allComments.length < limit) {
+  while (allComments.length < limit && consecutiveEmpty < maxEmpty) {
     try {
       const url = `https://www.douyin.com/aweme/v1/web/comment/list/?` +
         new URLSearchParams({
           aweme_id: awemeId,
           cursor: String(cursor),
-          count: '20',
+          count: '18', // 减小单次请求数量
           device_platform: 'webapp',
           aid: '6383',
           channel: 'channel_pc_web',
@@ -255,29 +258,45 @@ async function tryApiV1(awemeId, maxCount) {
           'Referer': `https://www.douyin.com/video/${awemeId}`,
           'Accept': 'application/json, text/plain, */*',
           'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
-          'Cookie': `ttwid=1|${Date.now()}|...; odin_tt=...; passport_csrf_token=...`,
+          'Cookie': `ttwid=1|${Date.now()}|random${Math.random().toString(36).slice(2)}; msToken=${generateMsToken()}`,
         },
       });
 
-      if (!resp.ok) break;
+      if (!resp.ok) {
+        console.log(`API V1 请求失败: ${resp.status}`);
+        break;
+      }
 
       const data = await resp.json();
       const commentList = data?.comments || data?.data?.comments || [];
-      if (commentList.length === 0) break;
+
+      if (commentList.length === 0) {
+        consecutiveEmpty++;
+        // 增加等待时间
+        await sleep(500 * consecutiveEmpty);
+        continue;
+      }
+
+      consecutiveEmpty = 0;
 
       for (const c of commentList) {
         allComments.push({
           text: c.text || '',
-          user: c.user?.nickname || '匿名',
+          user: c.user?.nickname || c.user_name || '匿名',
           diggCount: c.digg_count || 0,
           createTime: c.create_time || 0,
+          ipLabel: c.ip_label || '',
           replyCount: c.reply_comment_total || 0,
         });
       }
 
       if (!data.has_more && !data.hasMore) break;
-      cursor = data.cursor || cursor + 20;
-    } catch {
+      cursor = data.cursor || cursor + 18;
+
+      // 添加随机延迟，避免触发频率限制
+      await sleep(300 + Math.random() * 400);
+    } catch (err) {
+      console.log(`API V1 异常: ${err.message}`);
       break;
     }
   }
@@ -285,18 +304,33 @@ async function tryApiV1(awemeId, maxCount) {
   return allComments;
 }
 
+function generateMsToken() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  for (let i = 0; i < 128; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 async function tryApiV2(awemeId, maxCount) {
   const allComments = [];
   let cursor = 0;
-  const limit = Math.min(maxCount, 500);
+  const limit = Math.min(maxCount, 200);
+  let consecutiveEmpty = 0;
+  const maxEmpty = 3;
 
-  while (allComments.length < limit) {
+  while (allComments.length < limit && consecutiveEmpty < maxEmpty) {
     try {
       const url = `https://www.iesdouyin.com/web/api/v2/comment/list/?` +
         new URLSearchParams({
           aweme_id: awemeId,
           cursor: String(cursor),
-          count: '20',
+          count: '18',
         });
 
       const resp = await fetch(url, {
@@ -312,21 +346,32 @@ async function tryApiV2(awemeId, maxCount) {
 
       const data = await resp.json();
       const commentList = data?.comments || data?.data?.comments || [];
-      if (commentList.length === 0) break;
+
+      if (commentList.length === 0) {
+        consecutiveEmpty++;
+        await sleep(500 * consecutiveEmpty);
+        continue;
+      }
+
+      consecutiveEmpty = 0;
 
       for (const c of commentList) {
         allComments.push({
           text: c.text || '',
-          user: c.user?.nickname || '匿名',
+          user: c.user?.nickname || c.user_name || '匿名',
           diggCount: c.digg_count || 0,
           createTime: c.create_time || 0,
+          ipLabel: c.ip_label || '',
           replyCount: c.reply_comment_total || 0,
         });
       }
 
       if (!data.has_more && !data.hasMore) break;
-      cursor = data.cursor || cursor + 20;
-    } catch {
+      cursor = data.cursor || cursor + 18;
+
+      await sleep(300 + Math.random() * 400);
+    } catch (err) {
+      console.log(`API V2 异常: ${err.message}`);
       break;
     }
   }
