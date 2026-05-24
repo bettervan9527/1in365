@@ -581,13 +581,13 @@
         }
     </style>
 </head>
-<body>
+<body class="light-mode">
 
     <div class="container">
 
         <div class="card">
             <div class="header">
-                <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="切换主题">🌙</button>
+                <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="切换主题">☀️</button>
                 <div class="label">Birthday Paradox Calculator</div>
                 <h1>生日相同概率计算器</h1>
                 <p>在评论区中，找到与自己出生<strong>月·日（不限年份）</strong> 或 <strong>年·月·日（完全一致）</strong>的人，概率有多大？</p>
@@ -1154,9 +1154,9 @@
 
         (function initTheme() {
             const saved = localStorage.getItem('theme');
-            if (saved === 'light') {
-                document.body.classList.add('light-mode');
-                document.getElementById('themeToggle').textContent = '☀️';
+            if (saved === 'dark') {
+                document.body.classList.remove('light-mode');
+                document.getElementById('themeToggle').textContent = '🌙';
             }
         })();
 
