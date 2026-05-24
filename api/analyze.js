@@ -64,7 +64,13 @@ async function extractAwemeId(url) {
   const directMatch = url.match(/douyin\.com\/video\/(\d+)/);
   if (directMatch) return directMatch[1];
 
-  const shortMatch = url.match(/v\.douyin\.com\/(\w+)/);
+  try {
+    const parsed = new URL(url);
+    const modalId = parsed.searchParams.get('modal_id');
+    if (modalId && /^\d+$/.test(modalId)) return modalId;
+  } catch {}
+
+  const shortMatch = url.match(/v\.douyin\.com\/([\w-]+)/);
   if (shortMatch) {
     try {
       const resp = await fetch(url, {
@@ -77,10 +83,15 @@ async function extractAwemeId(url) {
       const finalUrl = resp.url;
       const idMatch = finalUrl.match(/video\/(\d+)/);
       if (idMatch) return idMatch[1];
+      const modalMatch = finalUrl.match(/modal_id=(\d+)/);
+      if (modalMatch) return modalMatch[1];
     } catch {
       return null;
     }
   }
+
+  const genericMatch = url.match(/(?:aweme_id|video_id|modal_id)=(\d+)/);
+  if (genericMatch) return genericMatch[1];
 
   return null;
 }
