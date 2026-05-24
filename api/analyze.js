@@ -338,33 +338,47 @@ async function analyzeBirthdays(comments, apiKey) {
   if (!comments || comments.length === 0) return [];
 
   const allBirthdays = [];
+  const foundIndexes = new Set();
 
-  const batchSize = 80;
+  const batchSize = 60; // 减小批次，提高识别质量
   for (let i = 0; i < comments.length; i += batchSize) {
     const batch = comments.slice(i, i + batchSize);
 
+    // 本地正则提取（快速识别明确格式）
     const localResults = localExtract(batch, i);
     for (const r of localResults) {
-      allBirthdays.push(r);
+      if (!foundIndexes.has(r.commentIndex)) {
+        allBirthdays.push(r);
+        foundIndexes.add(r.commentIndex);
+      }
     }
 
-    const foundIndexes = new Set(localResults.map(r => r.commentIndex));
-
-    const remainingLines = [];
+    // 对所有评论调用AI识别（包括已本地识别的，确保不漏）
+    const allLines = [];
     for (let bi = 0; bi < batch.length; bi++) {
       const idx = i + bi + 1;
       if (!foundIndexes.has(idx)) {
-        remainingLines.push(`[${idx}] ${batch[bi].text}`);
+        allLines.push(`[${idx}] ${batch[bi].text}`);
       }
     }
 
-    if (remainingLines.length > 0) {
-      const aiResults = await callDeepSeek(remainingLines.join('\n'), apiKey);
-      for (const r of aiResults) {
-        allBirthdays.push(r);
+    if (allLines.length > 0) {
+      try {
+        const aiResults = await callDeepSeek(allLines.join('\n'), apiKey);
+        for (const r of aiResults) {
+          if (!foundIndexes.has(r.commentIndex)) {
+            allBirthdays.push(r);
+            foundIndexes.add(r.commentIndex);
+          }
+        }
+      } catch (err) {
+        console.error(`批次 ${i}-${i + batch.length} AI识别失败:`, err.message);
       }
     }
   }
+
+  // 按评论序号排序
+  allBirthdays.sort((a, b) => a.commentIndex - b.commentIndex);
 
   return allBirthdays;
 }
@@ -396,22 +410,23 @@ function extractDateFromText(text, commentIndex) {
 
   const clean = text.replace(/[@#＠＃]+/g, '').replace(/https?:\/\/\S+/g, '');
 
-  const patterns = [
-    /(\d{1,2})月(\d{1,2})[日号]?/,
-    /(\d{1,2})[\.\-\/](\d{1,2})(?![0-9年月日号])/,
-    /(\d{1,2})[\.\-\/](\d{1,2})[日号]/,
-    /(\d{1,2})[：:](\d{1,2})/,
-    /[^0-9](\d{2})(\d{2})[^0-9]/,
-    /^(\d{2})(\d{2})$/,
+  // 四位数字格式（最常见）：MMDD
+  const fourDigitPatterns = [
+    /(^|[^\d])(\d{4})($|[^\d])/,        // 前后有边界的4位数字
+    /([\s,，、。！？\]\[)('"]?)(\d{4})([\s,，、。！？\]\[)('"]?)/, // 带emoji/标点的
+    /(?:birthday|生日)[^\d]*(\d{4})/,    // 生日+数字
+    /(\d{4})[^\d]*(?:birthday|生日)/,    // 数字+生日
   ];
 
-  for (const pattern of patterns) {
+  for (const pattern of fourDigitPatterns) {
     const match = clean.match(pattern);
     if (match) {
-      const month = parseInt(match[1], 10);
-      const day = parseInt(match[2], 10);
+      const num = match[2] || match[3];
+      if (!num) continue;
+      const month = parseInt(num.slice(0, 2), 10);
+      const day = parseInt(num.slice(2, 4), 10);
       if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
-        if (!(month === 2 && day > 29) && !([4, 6, 9, 11].includes(month) && day > 30)) {
+        if (isValidDate(month, day)) {
           return {
             commentIndex,
             date: `${month}月${day}日`,
@@ -423,12 +438,22 @@ function extractDateFromText(text, commentIndex) {
     }
   }
 
-  const standaloneMatch = clean.match(/(?:^|[\s,，、。！？🎂🎉🎁❤✨💕\]])([01]\d)([0-3]\d)(?:$|[\s,，、。！？🎂🎉🎁❤✨💕\[])/);
-  if (standaloneMatch) {
-    const month = parseInt(standaloneMatch[1], 10);
-    const day = parseInt(standaloneMatch[2], 10);
-    if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
-      if (!(month === 2 && day > 29) && !([4, 6, 9, 11].includes(month) && day > 30)) {
+  // 标准日期格式
+  const patterns = [
+    /(\d{1,2})月(\d{1,2})[日号]?/,           // 12月25日、1月1号
+    /(\d{1,2})[\.\-\/](\d{1,2})(?![0-9\.\-\/年月日号])/, // 12.25、12-25、12/25
+    /(\d{1,2})[：:月](\d{1,2})日?/,           // 12:25、12：25
+    /(\d{1,2})号[^\d]*(\d{1,2})[日号]?/,     // 25号生日 1月1号
+    /(?:出生|生日)[^\d]*(\d{1,2})[月\-](\d{1,2})/, // 出生12-25、生日1月1
+    /(\d{1,2})[月\-](\d{1,2})[^\d]*(?:出生|生日)/, // 12-25出生、1月1生日
+  ];
+
+  for (const pattern of patterns) {
+    const match = clean.match(pattern);
+    if (match) {
+      const month = parseInt(match[1], 10);
+      const day = parseInt(match[2], 10);
+      if (isValidDate(month, day)) {
         return {
           commentIndex,
           date: `${month}月${day}日`,
@@ -439,19 +464,54 @@ function extractDateFromText(text, commentIndex) {
     }
   }
 
+  // 独立的4位数字（前后有边界）
+  const standaloneMatch = clean.match(/(?:^|[\s,，、。！？\]\[)('"]*)([01]\d)([0-3]\d)(?:$|[\s,，、。！？\]\[)('"]*)/);
+  if (standaloneMatch) {
+    const month = parseInt(standaloneMatch[2], 10);
+    const day = parseInt(standaloneMatch[3], 10);
+    if (isValidDate(month, day)) {
+      return {
+        commentIndex,
+        date: `${month}月${day}日`,
+        type: 'birthday',
+        originalText: text,
+      };
+    }
+  }
+
   return null;
+}
+
+function isValidDate(month, day) {
+  if (month < 1 || month > 12 || day < 1 || day > 31) return false;
+  if (month === 2 && day > 29) return false;
+  if ([4, 6, 9, 11].includes(month) && day > 30) return false;
+  return true;
 }
 
 function extractWish(text, commentIndex) {
   if (!text) return null;
 
+  const clean = text.toLowerCase();
+
   const wishPatterns = [
-    /生日[快乐快快]/,
+    // 中文祝福
+    /生日[快乐快祝]|[生破][日蛋][快乐快祝]/,
     /生[日快]/,
-    /破蛋[日快乐]/,
     /[Hh]appy\s*[Bb]irthday/,
     /诞辰/,
     /庆生/,
+    /寿星/,
+    /长大一岁/,
+    /成年了/,
+    /又老了一岁/,
+    // 祝福语
+    /祝你[今明今]?[天日].*快乐/,
+    /[生日]祝福/,
+    // 英文
+    /🎂.*🎂|🎉.*🎉/,
+    /congratulations.*birthday/i,
+    /wish.*you.*happy/i,
   ];
 
   for (const pattern of wishPatterns) {
@@ -473,28 +533,59 @@ async function callDeepSeek(commentsText, apiKey) {
 
   const prompt = `你是抖音评论生日识别专家。识别以下评论中的生日信息。
 
-识别规则（按优先级）：
-⭐ 1. 四位数字 = 生日（抖音最常见！）：
-   "0214"→"2月14日", "1201"→"12月1日", "0229"→"2月29日"
-   前两位01-12=月份，后两位01-31=日期。即使被emoji包围也识别。
-⭐ 2. 中文日期格式："12月25日"、"1月1号"、"12.25"、"12-25"、"12/25"
-⭐ 3. 生日关键词附近数字："生日0214"、"我生日是5月20"
-⭐ 4. 生日祝福无日期→type="wish", date=""："生日快乐"、"生快"、"happy birthday"
-   但如果祝福旁有数字，优先提取数字作为date
-⭐ 5. 星座→type="zodiac", date=星座名：天蝎座、双子座...
-⭐ 6. 年龄+生日组合："03年"、"我03的"、"05的" → 结合数字推断
+【识别规则 - 严格按优先级】
 
-重要排除规则：
-- 手机号、QQ号、微信号中的数字 NOT 生日
-- 年份(19xx/20xx) NOT 生日日期
-- 商品编号、价格 NOT 生日
-- 楼层、点赞数 NOT 生日
+⭐⭐⭐ 第1优先：四位数字 MMDD 格式（抖音最最常见！！！）
+识别所有4位连续数字，格式：前两位=月份(01-12)，后两位=日期(01-31)
+示例：
+- "0214" → 2月14日
+- "1201" → 12月1日
+- "0229" → 2月29日（闰年）
+- "0101" → 1月1日
+- "1105" → 11月5日
+即使被emoji🎂🎉包裹也要识别！即使在句子中间也要识别！
+如："祝姐姐0214生日快乐" → 识别为 2月14日
+如："🎂1225🎂" → 识别为 12月25日
 
-每条结果格式：
-{"commentIndex":数字,"date":"X月X日","type":"birthday|wish|zodiac","originalText":"原文"}
-无日期时date可为""。
-严格返回JSON数组，无内容返回[]。
+⭐ 第2优先：标准中文日期格式
+- "12月25日"、"12月25"、"1月1号"、"5月20号"
+- "12.25"、"12-25"、"12/25"
+- "12:25"、"12：25"
 
+⭐ 第3优先：生日关键词 + 数字
+- "生日是5月20"、"出生在12月"
+- "生日1215"、"生日是0214"
+
+⭐ 第4优先：生日祝福（无具体日期）
+type="wish"，date=""
+- "生日快乐"、"生快"、"happy birthday"、"破蛋日快乐"
+- "祝你生日快乐"、"🎂🎉"
+
+⭐ 第5优先：星座
+type="zodiac"，date=星座名
+- "天蝎座"、"双子座"、"处女座"
+
+【必须排除 - 不是生日】
+❌ 手机号、QQ号、微信号：通常11位或以1开头的长数字
+❌ 楼层号：通常括号内或句尾
+❌ 商品价格：通常有"¥"或小数点
+❌ 年份：19xx、20xx
+❌ 点赞数、评论数
+❌ 邮编、快递单号
+
+【输出格式 - 严格JSON数组】
+[{"commentIndex":数字,"date":"X月X日","type":"birthday|wish|zodiac","originalText":"原文"}]
+- 无生日内容返回[]
+- date为具体日期或星座名
+- type: birthday/wish/zodiac
+
+【重要提醒】
+1. 每条评论都要判断，不要漏掉任何可能
+2. 四位数字是最高优先级，几乎所有生日都会以MMDD格式出现
+3. originalText必须是评论原文
+4. 只返回JSON数组，不要任何解释
+
+评论内容：
 ${commentsText}`;
 
   try {
