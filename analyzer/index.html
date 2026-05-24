@@ -208,10 +208,33 @@
         .input-row {
             display: flex;
             gap: 12px;
+            align-items: flex-start;
         }
 
         .input-row .input-group {
             flex: 1;
+        }
+
+        .input-row.url-row {
+            flex-wrap: wrap;
+        }
+
+        .input-row.url-row .input-group:first-child {
+            flex: 2;
+            min-width: 280px;
+        }
+
+        .input-row.url-row .count-group {
+            flex: 0 0 140px;
+        }
+
+        .input-row.url-row .btn-primary {
+            margin-top: 0;
+            align-self: flex-end;
+        }
+
+        .count-group input {
+            width: 100%;
         }
 
         .btn-primary {
@@ -811,11 +834,16 @@
                 </div>
 
                 <div class="input-section">
-                    <div class="input-row">
+                    <div class="input-row url-row">
                         <div class="input-group">
                             <label>抖音视频链接 <span class="required">*</span></label>
                             <input type="url" id="videoUrlInput" placeholder="https://www.douyin.com/video/... 或 https://v.douyin.com/...">
                             <div class="hint">在抖音 APP 中点分享 → 复制链接，粘贴到上方输入框</div>
+                        </div>
+                        <div class="input-group count-group">
+                            <label>评论数量</label>
+                            <input type="number" id="commentCountInput" min="10" max="5000" value="500" step="10">
+                            <div class="hint">最多分析评论数</div>
                         </div>
                         <button class="btn-primary" id="analyzeBtn" onclick="startAnalysis()">开始分析</button>
                     </div>
@@ -1043,6 +1071,7 @@
 
         async function startAnalysis() {
             const videoUrl = document.getElementById('videoUrlInput').value.trim();
+            const maxComments = parseInt(document.getElementById('commentCountInput').value, 10) || 500;
 
             if (!videoUrl) {
                 showStatus('请先输入抖音视频链接', true);
@@ -1064,7 +1093,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         videoUrl,
-                        maxComments: 200,
+                        maxComments: maxComments,
                     }),
                 });
 
