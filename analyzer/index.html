@@ -806,6 +806,138 @@
             background: rgba(245, 217, 10, 0.08);
         }
 
+        .search-section {
+            background: var(--bg-surface);
+            border: 1px solid var(--color-border-dark);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .search-row {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            align-items: flex-start;
+        }
+
+        .search-input-group {
+            flex: 1;
+            min-width: 280px;
+        }
+
+        .search-input-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .search-input-wrapper {
+            display: flex;
+            gap: 8px;
+        }
+
+        .search-input-wrapper input {
+            flex: 1;
+            padding: 10px 14px;
+            background: var(--bg-input);
+            border: 1px solid var(--color-border-dark);
+            border-radius: 8px;
+            font-size: 14px;
+            color: var(--text-primary);
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .search-input-wrapper input:focus {
+            border-color: var(--color-green);
+            box-shadow: 0 0 0 1px var(--color-green-border);
+        }
+
+        .search-btn {
+            padding: 10px 20px;
+            background: var(--color-green);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .search-btn:hover {
+            opacity: 0.9;
+        }
+
+        .search-hint {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 6px;
+        }
+
+        .quick-birthdays {
+            flex: 0 0 200px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .quick-birthdays .quick-title {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .quick-birthday-btn {
+            padding: 6px 12px;
+            background: rgba(62, 207, 142, 0.1);
+            border: 1px solid rgba(62, 207, 142, 0.2);
+            border-radius: 6px;
+            font-size: 13px;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+        }
+
+        .quick-birthday-btn:hover {
+            background: rgba(62, 207, 142, 0.15);
+            border-color: var(--color-green);
+        }
+
+        .search-result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .search-result-header span {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--color-green);
+        }
+
+        .clear-search-btn {
+            padding: 6px 14px;
+            background: transparent;
+            border: 1px solid var(--color-border-dark);
+            border-radius: 6px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .clear-search-btn:hover {
+            border-color: var(--text-muted);
+            color: var(--text-primary);
+        }
+
         @keyframes toastIn {
             from { opacity: 0; transform: translateX(40px); }
             to { opacity: 1; transform: translateX(0); }
@@ -974,6 +1106,44 @@
                     </div>
 
                     <div class="divider"></div>
+
+                    <div class="search-section" id="searchSection" style="display: none;">
+                        <div class="section-title">
+                            <span>🔍 查找指定生日</span>
+                            <span class="badge">筛选</span>
+                        </div>
+                        <div class="search-row">
+                            <div class="search-input-group">
+                                <label>输入生日日期</label>
+                                <div class="search-input-wrapper">
+                                    <input type="text" id="birthdaySearchInput" placeholder="例如: 1月1日 或 0101">
+                                    <button class="search-btn" onclick="searchBirthday()">查找</button>
+                                </div>
+                                <div class="search-hint">支持格式：1月1日、0101、12-25、12/25、12.25</div>
+                            </div>
+                            <div class="quick-birthdays" id="quickBirthdays"></div>
+                        </div>
+                        <div id="searchResults" style="display: none; margin-top: 16px;">
+                            <div class="search-result-header">
+                                <span id="searchResultCount">找到 0 条</span>
+                                <button class="clear-search-btn" onclick="clearSearch()">清除筛选</button>
+                            </div>
+                            <div class="table-wrap">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>日期</th>
+                                            <th>评论内容</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="searchResultBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="divider" id="dividerAfterSearch" style="display: none;"></div>
 
                     <div class="section-title">
                         <span>识别结果明细</span>
@@ -1217,6 +1387,9 @@
             renderChart(stats.topDates);
             renderTable(birthdays);
             renderComments(data.comments);
+
+            // 初始化搜索功能
+            initSearch(birthdays, stats.topDates);
         }
 
         function renderChart(topDates) {
@@ -1623,6 +1796,146 @@
             }
             downloadJSON(currentData, '评论分析综合报告.json');
             toast('✅ 综合报告已导出为 JSON');
+        }
+
+        let searchData = null;
+
+        function initSearch(birthdays, topDates) {
+            searchData = birthdays.filter(b => b.type === 'birthday' && b.date);
+            const searchSection = document.getElementById('searchSection');
+            const dividerAfterSearch = document.getElementById('dividerAfterSearch');
+
+            if (searchData.length > 0) {
+                searchSection.style.display = 'block';
+                dividerAfterSearch.style.display = 'block';
+
+                renderQuickBirthdays(topDates);
+
+                // 添加回车键搜索
+                document.getElementById('birthdaySearchInput').addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        searchBirthday();
+                    }
+                });
+            } else {
+                searchSection.style.display = 'none';
+                dividerAfterSearch.style.display = 'none';
+            }
+        }
+
+        function renderQuickBirthdays(topDates) {
+            const container = document.getElementById('quickBirthdays');
+            container.innerHTML = '';
+
+            const title = document.createElement('div');
+            title.className = 'quick-title';
+            title.textContent = '热门日期';
+            container.appendChild(title);
+
+            // 显示 Top 5 热门日期
+            topDates.slice(0, 5).forEach(d => {
+                const btn = document.createElement('button');
+                btn.className = 'quick-birthday-btn';
+                btn.textContent = d.date;
+                btn.onclick = function() {
+                    document.getElementById('birthdaySearchInput').value = d.date;
+                    searchBirthday();
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        function parseBirthday(input) {
+            if (!input || !input.trim()) return null;
+
+            const clean = input.trim();
+            let month = null, day = null;
+
+            // 格式：1月1日、1月1号
+            const fullMonth = clean.match(/^(\d{1,2})月(\d{1,2})[日号]?$/);
+            if (fullMonth) {
+                month = parseInt(fullMonth[1]);
+                day = parseInt(fullMonth[2]);
+            }
+
+            // 格式：0101（四位数字）
+            else if (/^\d{4}$/.test(clean)) {
+                month = parseInt(clean.slice(0, 2));
+                day = parseInt(clean.slice(2, 4));
+            }
+
+            // 格式：1.1、1-1、1/1
+            else {
+                const sepMatch = clean.match(/^(\d{1,2})[.\-\/](\d{1,2})$/);
+                if (sepMatch) {
+                    month = parseInt(sepMatch[1]);
+                    day = parseInt(sepMatch[2]);
+                }
+            }
+
+            if (month && day && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+                return `${month}月${day}日`;
+            }
+
+            return null;
+        }
+
+        function searchBirthday() {
+            const input = document.getElementById('birthdaySearchInput').value;
+            const targetDate = parseBirthday(input);
+            const searchResults = document.getElementById('searchResults');
+            const searchResultBody = document.getElementById('searchResultBody');
+            const searchResultCount = document.getElementById('searchResultCount');
+
+            if (!targetDate) {
+                toast('请输入正确的日期格式，例如：1月1日 或 0101', 'warning');
+                return;
+            }
+
+            const matches = searchData.filter(b => {
+                if (!b.date) return false;
+                // 精确匹配
+                if (b.date === targetDate) return true;
+                // 宽松匹配：1月1日 和 01月01日 也匹配
+                const normTarget = normalizeDate(targetDate);
+                const normDate = normalizeDate(b.date);
+                return normTarget === normDate;
+            });
+
+            searchResultBody.innerHTML = '';
+
+            if (matches.length > 0) {
+                searchResultCount.textContent = `找到 ${matches.length} 条`;
+
+                matches.forEach((b, i) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML =
+                        '<td style="color:#9ca3af;font-size:11px;">' + b.commentIndex + '</td>' +
+                        '<td><strong>' + (b.date || '—') + '</strong></td>' +
+                        '<td style="max-width:500px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escapeHtml(b.originalText || '') + '</td>';
+                    searchResultBody.appendChild(row);
+                });
+
+                searchResults.style.display = 'block';
+                toast(`✅ 找到 ${matches.length} 条与 ${targetDate} 相关的评论`);
+            } else {
+                searchResultBody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:#9ca3af;padding:24px;">未找到与 ' + targetDate + ' 相关的评论</td></tr>';
+                searchResults.style.display = 'block';
+                toast('未找到与 ' + targetDate + ' 相关的评论', 'warning');
+            }
+        }
+
+        function normalizeDate(dateStr) {
+            const match = dateStr.match(/^(\d{1,2})月(\d{1,2})日$/);
+            if (!match) return dateStr;
+            const m = match[1].padStart(2, '0');
+            const d = match[2].padStart(2, '0');
+            return `${m}月${d}日`;
+        }
+
+        function clearSearch() {
+            document.getElementById('birthdaySearchInput').value = '';
+            document.getElementById('searchResults').style.display = 'none';
         }
 
         (function initTheme() {
