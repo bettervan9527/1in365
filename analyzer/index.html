@@ -297,6 +297,44 @@
 
         @keyframes spin { to { transform: rotate(360deg); } }
 
+        .progress-bar {
+            flex: 1;
+            margin-left: 12px;
+        }
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+            font-size: 13px;
+        }
+
+        .progress-info span:first-child {
+            color: var(--text-secondary);
+        }
+
+        .progress-info span:last-child {
+            color: var(--color-green);
+            font-family: var(--font-mono);
+            font-weight: 500;
+        }
+
+        .progress-track {
+            height: 6px;
+            background: rgba(62, 207, 142, 0.15);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--color-green), #10b981);
+            border-radius: 3px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
         .results-summary {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -852,6 +890,15 @@
                 <div class="status-bar" id="statusBar">
                     <div class="spinner" id="statusSpinner"></div>
                     <span id="statusText">正在分析中，请稍候...</span>
+                    <div class="progress-bar" id="progressBar" style="display: none;">
+                        <div class="progress-info">
+                            <span id="progressText">已获取 0 条评论</span>
+                            <span id="progressPercent">0%</span>
+                        </div>
+                        <div class="progress-track">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                    </div>
                 </div>
 
                 <div id="resultsArea" style="display: none;">
@@ -1086,14 +1133,52 @@
             document.getElementById('emptyArea').style.display = 'none';
 
             showStatus('正在获取抖音评论...');
+            hideProgress();
 
             try {
+                // 第一步：快速获取评论总数
+                const previewResp = await fetch('/api/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        videoUrl,
+                        maxComments: maxComments,
+                        mode: 'preview'
+                    }),
+                });
+
+                let previewData;
+                try {
+                    previewData = await previewResp.json();
+                } catch {
+                    const text = await previewResp.text();
+                    showStatus('服务器返回异常: ' + text.substring(0, 100), true);
+                    btn.disabled = false;
+                    btn.textContent = '开始分析';
+                    document.getElementById('emptyArea').style.display = 'block';
+                    return;
+                }
+
+                if (!previewResp.ok || !previewData.success) {
+                    showStatus(previewData.error || '获取评论失败，请稍后重试', true);
+                    btn.disabled = false;
+                    btn.textContent = '开始分析';
+                    document.getElementById('emptyArea').style.display = 'block';
+                    return;
+                }
+
+                const totalComments = previewData.totalComments;
+                showStatus(`已获取 ${totalComments} 条评论，正在分析生日信息...`);
+                showProgress(0, totalComments);
+
+                // 第二步：完整分析
                 const resp = await fetch('/api/analyze', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         videoUrl,
                         maxComments: maxComments,
+                        mode: 'full'
                     }),
                 });
 
@@ -1118,17 +1203,37 @@
                 }
 
                 hideStatus();
+                hideProgress();
+                updateProgress(100, totalComments);
                 currentData = data;
                 renderResults(data);
                 document.getElementById('resultsArea').style.display = 'block';
                 document.getElementById('emptyArea').style.display = 'none';
             } catch (err) {
                 showStatus('网络错误: ' + err.message, true);
+                hideProgress();
                 document.getElementById('emptyArea').style.display = 'block';
             }
 
             btn.disabled = false;
             btn.textContent = '开始分析';
+        }
+
+        function showProgress(current, total) {
+            const progressBar = document.getElementById('progressBar');
+            progressBar.style.display = 'block';
+            updateProgress(current, total);
+        }
+
+        function updateProgress(current, total) {
+            const percent = Math.round((current / total) * 100);
+            document.getElementById('progressText').textContent = `已识别 ${current} / ${total} 条评论`;
+            document.getElementById('progressPercent').textContent = percent + '%';
+            document.getElementById('progressFill').style.width = percent + '%';
+        }
+
+        function hideProgress() {
+            document.getElementById('progressBar').style.display = 'none';
         }
 
         function renderResults(data) {
