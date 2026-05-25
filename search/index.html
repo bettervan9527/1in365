@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>找相同生日 - 抖音评论区</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-green: #3ecf8e;
+            --color-green-link: #00c573;
+            --color-green-border: rgba(62, 207, 142, 0.3);
+            --color-near-black: #0f0f0f;
+            --color-dark: #171717;
+            --color-dark-border: #242424;
+            --color-border-dark: #2e2e2e;
+            --color-mid-border: #363636;
+            --color-border-light: #393939;
+            --color-mid-gray: #898989;
+            --color-light-gray: #b4b4b4;
+            --color-near-white: #efefef;
+            --color-off-white: #fafafa;
+            --color-tomato: #e5484d;
+            --color-yellow: #f5d90a;
+            --color-blue: #3b82f6;
+            --color-violet: #8b5cf6;
+            --font-primary: system-ui, -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            --font-mono: 'Source Code Pro', 'Office Code Pro', Menlo, monospace;
+            --bg-page: #0f0f0f;
+            --bg-card: #141414;
+            --bg-input: #140e1f;
+            --bg-surface: #171717;
+            --text-primary: #fafafa;
+            --text-secondary: #b4b4b4;
+            --text-muted: #898989;
+            --border-color: #2e2e2e;
+            --border-subtle: #1e1e1e;
+        }
+
+        .light-mode {
+            --color-green: #3ecf8e;
+            --color-green-link: #00c573;
+            --color-green-border: rgba(62, 207, 142, 0.35);
+            --color-near-black: #111827;
+            --color-dark: #1f2937;
+            --color-dark-border: #d1d5db;
+            --color-border-dark: #e5e7eb;
+            --color-mid-border: #e5e7eb;
+            --color-border-light: #f3f4f6;
+            --color-mid-gray: #9ca3af;
+            --color-light-gray: #d1d5db;
+            --color-near-white: #f3f4f6;
+            --color-off-white: #f9fafb;
+            --bg-page: #f3f4f6;
+            --bg-card: #ffffff;
+            --bg-input: #f0f1f3;
+            --bg-surface: #f9fafb;
+            --text-primary: #1f2937;
+            --text-secondary: #4b5563;
+            --text-muted: #9ca3af;
+            --border-color: #e5e7eb;
+            --border-subtle: #f3f4f6;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--bg-page);
+            color: var(--text-primary);
+            font-family: var(--font-primary);
+            font-size: 16px;
+            font-weight: 400;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            min-height: 100vh;
+            padding: 12px;
+        }
+
+        .container {
+            max-width: 920px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--color-border-dark);
+            border-radius: 16px;
+            overflow: hidden;
+            margin-bottom: 24px;
+        }
+
+        .header {
+            position: relative;
+            padding: 32px 32px 28px;
+            text-align: center;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .header .emoji { font-size: 36px; margin-bottom: 10px; }
+
+        .header .label {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+            background: var(--bg-surface);
+            border: 1px solid var(--color-border-dark);
+            border-radius: 6px;
+            padding: 3px 10px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            letter-spacing: -0.02em;
+        }
+
+        .header p {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: var(--bg-surface);
+            border: 1px solid var(--color-border-dark);
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        .theme-toggle:hover { border-color: var(--text-muted); }
+
+        .body-content { padding: 24px 20px 28px; }
+
+        .nav-bar {
+            display: flex;
+            gap: 4px;
+            background: var(--bg-surface);
+            border: 1px solid var(--color-border-dark);
+            border-radius: 9999px;
+            padding: 4px;
+            margin-bottom: 28px;
+        }
+
+        .nav-bar a {
+            flex: 1;
+            padding: 8px 14px;
+            text-decoration: none;
+            border-radius: 9999px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-muted);
+            text-align: center;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+
+        .nav-bar a.active {
+            background: var(--color-near-black);
+            color: var(--color-off-white);
+            border: 1px solid var(--color-border-dark);
+        }
+
+        .nav-bar a:hover:not(.active) { color: var(--text-secondary); }
+
+        .input-section {
+            background: var(--bg-surface);
+            border: 1px solid var(--color-border-dark);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .input-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        .input-group label .required { color: var(--color-tomato); }
+
+        .input-group input {
+            width: 100%;
+            padding: 10px 14px;
+            background: var(--bg-input);
+            border: 1px solid var(--color-border-dark);
+            border-radius: 8px;
+            font-size: 14px;
+            color: var(--text-primary);
+            outline: none;
+            font-family: var(--font-primary);
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .input-group input:focus {
+            border-color: var(--color-green);
+            box-shadow: 0 0 0 1px var(--color-green-border);
+        }
+
+        .hint {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .btn-primary {
+            padding: 10px 28px;
+            background: var(--color-green);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: opacity 0.2s, box-shadow 0.2s;
+            align-self: flex-end;
+        }
+
+        .btn-primary:hover { opacity: 0.9; }
+
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .status-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 18px;
+            background: var(--bg-surface);
+            border: 1px solid var(--color-green-border);
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: var(--text-secondary);
+            flex-wrap: wrap;
+        }
+
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid var(--color-border-dark);
+            border-top-color: var(--color-green);
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .results-summary {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 16px 10px;
+            background: var(--bg-surface);
+            border: 1px solid var(--color-border-dark);
+            border-radius: 10px;
+        }
+
+        .stat-item .label {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .stat-item .value {
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .value.green { color: var(--color-green); }
+        .value.purple { color: var(--color-violet); }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 14px;
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .badge {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 6px;
+            background: var(--bg-surface);
+            border: 1px solid var(--color-border-dark);
+            color: var(--text-muted);
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+            border: 1px solid var(--color-border-dark);
+            border-radius: 10px;
+            margin-bottom: 16px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        thead { background: var(--bg-surface); }
+
+        thead th {
+            padding: 14px 16px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--color-border-dark);
+            white-space: nowrap;
+        }
+
+        tbody td {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border-subtle);
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        tbody tr:last-child td { border-bottom: none; }
+
+        .comment-preview {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .comment-item {
+            padding: 12px 14px;
+            background: var(--bg-surface);
+            border: 1px solid var(--color-border-dark);
+            border-radius: 8px;
+        }
+
+        .comment-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .comment-meta .user {
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .comment-text {
+            font-size: 14px;
+            color: var(--text-primary);
+            line-height: 1.5;
+            word-break: break-word;
+        }
+
+        .comment-highlight {
+            padding: 2px 6px;
+            background: rgba(62, 207, 142, 0.15);
+            border-radius: 4px;
+            font-weight: 600;
+            color: var(--color-green);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .empty-state .icon { font-size: 40px; margin-bottom: 12px; }
+
+        .note-box {
+            padding: 14px 18px;
+            background: var(--bg-surface);
+            border: 1px solid var(--color-border-dark);
+            border-radius: 10px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .note-box strong { color: var(--text-primary); }
+
+        .footer {
+            text-align: center;
+            padding: 16px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .footer a {
+            color: var(--color-green-link);
+            text-decoration: none;
+        }
+
+        .footer a:hover { text-decoration: underline; }
+
+        @media (max-width: 700px) {
+            body { padding: 8px; }
+
+            .header { padding: 24px 16px 20px; }
+            .header h1 { font-size: 22px; }
+            .header .emoji { font-size: 28px; }
+
+            .body-content { padding: 16px 12px 20px; }
+
+            .results-summary { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+            .stat-item { padding: 14px 8px; }
+            .stat-item .value { font-size: 24px; }
+
+            .input-row { flex-direction: column; gap: 10px; }
+            .input-row .input-group { width: 100%; }
+            .btn-primary { width: 100%; }
+
+            .nav-bar { flex-direction: column; border-radius: 12px; }
+            .nav-bar a { border-radius: 8px; }
+        }
+    </style>
+</head>
+<body class="light-mode">
+    <div class="container">
+        <div class="card">
+            <div class="header">
+                <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="切换主题">☀️</button>
+                <div class="emoji">🔍</div>
+                <div class="label">Birthday Matcher</div>
+                <h1>找相同生日</h1>
+                <p>输入抖音视频链接和生日日期，<br>一键查找评论区中与您同一天生日的人</p>
+            </div>
+            <div class="body-content">
+
+                <div class="nav-bar">
+                    <a href="/" class="">生日概率计算器</a>
+                    <a href="/analyzer/" class="">评论生日分析器</a>
+                    <a href="/search/" class="active">找相同生日</a>
+                </div>
+
+                <div class="input-section">
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label>抖音视频链接 <span class="required">*</span></label>
+                            <input type="url" id="videoUrlInput" placeholder="https://www.douyin.com/video/... 或 https://v.douyin.com/...">
+                            <div class="hint">在抖音 APP 中点 分享 → 复制链接</div>
+                        </div>
+                        <div class="input-group">
+                            <label>生日日期 <span class="required">*</span></label>
+                            <input type="text" id="birthdayInput" placeholder="例如: 1月1日 或 0101">
+                            <div class="hint">支持格式：1月1日、0101、12-25、12/25、12.25</div>
+                        </div>
+                        <div class="input-group" style="max-width:140px;">
+                            <label>评论数量</label>
+                            <input type="number" id="commentCountInput" min="10" max="5000" value="500" step="10">
+                        </div>
+                        <button class="btn-primary" id="searchBtn" onclick="startSearch()">查找匹配</button>
+                    </div>
+                </div>
+
+                <div class="status-bar" id="statusBar">
+                    <div class="spinner" id="statusSpinner"></div>
+                    <span id="statusText">请输入视频链接和生日日期开始查找</span>
+                </div>
+
+                <div id="resultsArea" style="display: none;">
+                    <div class="results-summary">
+                        <div class="stat-item">
+                            <div class="label">评论总数</div>
+                            <div class="value purple" id="statTotal">—</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="label">生日提及</div>
+                            <div class="value green" id="statBirthdays">—</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="label">匹配结果</div>
+                            <div class="value green" id="statMatches">—</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="label">目标日期</div>
+                            <div class="value purple" id="statTarget">—</div>
+                        </div>
+                    </div>
+
+                    <div class="section-title">
+                        <span>匹配评论</span>
+                        <span class="badge" id="matchCount">0 条</span>
+                    </div>
+
+                    <div class="table-wrap" id="matchTableWrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>日期</th>
+                                    <th>评论内容</th>
+                                </tr>
+                            </thead>
+                            <tbody id="matchTableBody"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="section-title" style="margin-top: 24px;">
+                        <span>评论原文</span>
+                        <span class="badge" id="commentPreviewCount">—</span>
+                    </div>
+
+                    <div class="comment-preview" id="commentsContainer"></div>
+                </div>
+
+                <div id="emptyArea">
+                    <div class="empty-state">
+                        <div class="icon">🔍</div>
+                        <p>输入抖音视频链接和生日日期，开始查找相同生日的人</p>
+                    </div>
+                </div>
+
+                <div class="note-box" style="margin-top: 20px;">
+                    <strong>💡 使用说明</strong><br>
+                    • 输入抖音视频链接和您的生日日期<br>
+                    • 系统自动分析评论区，找出所有与您同一天生日的评论<br>
+                    • 测试用评论区链接：https://www.douyin.com/search/%E6%81%8B%E4%B8%8E%E6%96%B9%E8%88%9F%EF%BC%83?aid=cd1f99d0-f36a-49b5-abb1-b5b0b895f028&amp;modal_id=7637133894626074075&amp;type=general
+                </div>
+
+                <div class="note-box">
+                    <strong>⚠️ 注意</strong><br>
+                    抖音评论接口可能受平台限制，获取数量可能少于设置值。本工具仅用于学习和研究目的。
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <a href="/">生日概率计算器</a> &mdash; <a href="/analyzer/">评论生日分析器</a> &mdash; 找相同生日 &mdash; 数据驱动，AI 赋能
+        </div>
+    </div>
+
+    <script>
+        let currentData = null;
+
+        function toggleTheme() {
+            const body = document.body;
+            const btn = document.getElementById('themeToggle');
+            if (body.classList.contains('light-mode')) {
+                body.classList.remove('light-mode');
+                btn.textContent = '☀️';
+                localStorage.setItem('theme', 'dark');
+            } else {
+                body.classList.add('light-mode');
+                btn.textContent = '🌙';
+                localStorage.setItem('theme', 'light');
+            }
+        }
+
+        function showStatus(msg) {
+            const statusBar = document.getElementById('statusBar');
+            const statusSpinner = document.getElementById('statusSpinner');
+            const statusText = document.getElementById('statusText');
+            statusBar.style.display = 'flex';
+            statusSpinner.style.display = 'block';
+            statusText.textContent = msg;
+        }
+
+        function hideStatus() {
+            const statusBar = document.getElementById('statusBar');
+            statusBar.style.display = 'none';
+        }
+
+        function parseBirthday(input) {
+            if (!input || !input.trim()) return null;
+            const clean = input.trim();
+            let month = null, day = null;
+
+            const fullMonth = clean.match(/^(\d{1,2})月(\d{1,2})[日号]?$/);
+            if (fullMonth) {
+                month = parseInt(fullMonth[1]);
+                day = parseInt(fullMonth[2]);
+            } else if (/^\d{4}$/.test(clean)) {
+                month = parseInt(clean.slice(0, 2));
+                day = parseInt(clean.slice(2, 4));
+            } else {
+                const sepMatch = clean.match(/^(\d{1,2})[.\-\/](\d{1,2})$/);
+                if (sepMatch) {
+                    month = parseInt(sepMatch[1]);
+                    day = parseInt(sepMatch[2]);
+                }
+            }
+
+            if (month && day && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+                return `${month}月${day}日`;
+            }
+            return null;
+        }
+
+        function normalizeDate(dateStr) {
+            const match = dateStr.match(/^(\d{1,2})月(\d{1,2})日$/);
+            if (!match) return dateStr;
+            return `${match[1].padStart(2, '0')}月${match[2].padStart(2, '0')}日`;
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function formatTime(ts) {
+            if (!ts) return '—';
+            return new Date(ts * 1000).toLocaleString('zh-CN');
+        }
+
+        async function startSearch() {
+            const videoUrl = document.getElementById('videoUrlInput').value.trim();
+            const birthdayInput = document.getElementById('birthdayInput').value.trim();
+            const maxComments = parseInt(document.getElementById('commentCountInput').value, 10) || 500;
+
+            if (!videoUrl) {
+                showStatus('请输入抖音视频链接');
+                return;
+            }
+
+            const targetDate = parseBirthday(birthdayInput);
+            if (!targetDate) {
+                showStatus('请输入正确的生日日期，例如：1月1日 或 0101');
+                return;
+            }
+
+            const btn = document.getElementById('searchBtn');
+            btn.disabled = true;
+            btn.textContent = '查找中...';
+
+            document.getElementById('resultsArea').style.display = 'none';
+            document.getElementById('emptyArea').style.display = 'none';
+
+            showStatus(`正在获取评论并查找 ${targetDate} 生日的用户...`);
+
+            try {
+                const resp = await fetch('/api/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ videoUrl, maxComments }),
+                });
+
+                let data;
+                try {
+                    data = await resp.json();
+                } catch {
+                    const text = await resp.text();
+                    showStatus('服务器返回异常: ' + text.substring(0, 100));
+                    btn.disabled = false;
+                    btn.textContent = '查找匹配';
+                    document.getElementById('emptyArea').style.display = 'block';
+                    return;
+                }
+
+                if (!resp.ok || !data.success) {
+                    showStatus(data.error || '获取评论失败');
+                    btn.disabled = false;
+                    btn.textContent = '查找匹配';
+                    document.getElementById('emptyArea').style.display = 'block';
+                    return;
+                }
+
+                currentData = data;
+                renderResults(data, targetDate);
+            } catch (err) {
+                showStatus('网络错误: ' + err.message);
+                btn.disabled = false;
+                btn.textContent = '查找匹配';
+                document.getElementById('emptyArea').style.display = 'block';
+            }
+
+            btn.disabled = false;
+            btn.textContent = '查找匹配';
+        }
+
+        function renderResults(data, targetDate) {
+            const birthdays = data.birthdays || [];
+            const birthdayOnly = birthdays.filter(b => b.type === 'birthday' && b.date);
+
+            const normTarget = normalizeDate(targetDate);
+            const matches = birthdayOnly.filter(b => {
+                if (!b.date) return false;
+                if (b.date === targetDate) return true;
+                return normalizeDate(b.date) === normTarget;
+            });
+
+            document.getElementById('statTotal').textContent = data.totalComments.toLocaleString();
+            document.getElementById('statBirthdays').textContent = birthdayOnly.length;
+            document.getElementById('statMatches').textContent = matches.length;
+            document.getElementById('statTarget').textContent = targetDate;
+            document.getElementById('matchCount').textContent = matches.length + ' 条';
+
+            const matchBody = document.getElementById('matchTableBody');
+            matchBody.innerHTML = '';
+
+            if (matches.length > 0) {
+                matches.forEach((b, i) => {
+                    const row = document.createElement('tr');
+                    const text = b.originalText || '';
+                    const regex = new RegExp(b.date.replace(/月|日/g, '\\s*月|日\\s*').replace(/\s+/g, ''), 'g');
+                    const highlighted = text
+                        ? escapeHtml(text).replace(new RegExp('(' + escapeRegex(b.date) + ')', 'g'), '<span class="comment-highlight">$1</span>')
+                        : '';
+                    row.innerHTML =
+                        '<td style="color:var(--text-muted);font-size:11px;">' + b.commentIndex + '</td>' +
+                        '<td><strong>' + (b.date || '—') + '</strong></td>' +
+                        '<td style="max-width:500px;">' + (highlighted || escapeHtml(text || '')) + '</td>';
+                    matchBody.appendChild(row);
+                });
+
+                hideStatus();
+                document.getElementById('statusText').textContent = `✅ 找到 ${matches.length} 条与 ${targetDate} 生日匹配的评论`;
+                document.getElementById('statusSpinner').style.display = 'none';
+            } else {
+                matchBody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:24px;">未找到与 ' + targetDate + ' 生日匹配的评论，您可以换个视频试试</td></tr>';
+                hideStatus();
+                document.getElementById('statusText').textContent = '未找到与 ' + targetDate + ' 生日匹配的评论';
+                document.getElementById('statusSpinner').style.display = 'none';
+            }
+
+            // 渲染评论原文
+            renderComments(data.comments, birthdayOnly);
+            document.getElementById('resultsArea').style.display = 'block';
+            document.getElementById('emptyArea').style.display = 'none';
+        }
+
+        function escapeRegex(str) {
+            return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        function renderComments(comments, birthdayData) {
+            const container = document.getElementById('commentsContainer');
+            document.getElementById('commentPreviewCount').textContent = (comments || []).length + ' 条';
+            container.innerHTML = '';
+
+            if (!comments || comments.length === 0) {
+                container.innerHTML = '<div class="empty-state"><p>暂无评论数据</p></div>';
+                return;
+            }
+
+            const birthdayTexts = new Map();
+            birthdayData.forEach(b => {
+                if (b.originalText && !birthdayTexts.has(b.originalText)) {
+                    birthdayTexts.set(b.originalText, normalizeDate(b.date));
+                }
+            });
+
+            comments.forEach((c, i) => {
+                const item = document.createElement('div');
+                item.className = 'comment-item';
+
+                let displayText = escapeHtml(c.text || '');
+                const normCommentText = c.text || '';
+                if (birthdayTexts.has(normCommentText)) {
+                    const dateStr = birthdayTexts.get(normCommentText);
+                    displayText = displayText.replace(dateStr, '<span class="comment-highlight">' + dateStr + '</span>');
+                }
+
+                item.innerHTML =
+                    '<div class="comment-meta">' +
+                    '<span class="user">' + escapeHtml(c.user || '匿名') + (c.ipLabel ? ' · ' + escapeHtml(c.ipLabel) : '') + '</span>' +
+                    '<span>' + formatTime(c.createTime) + ' · 👍 ' + (c.diggCount || 0) + '</span>' +
+                    '</div>' +
+                    '<div class="comment-text">' + displayText + '</div>';
+
+                container.appendChild(item);
+            });
+        }
+
+        // 回车键触发查找
+        document.getElementById('birthdayInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') startSearch();
+        });
+
+        (function initTheme() {
+            const saved = localStorage.getItem('theme');
+            if (saved === 'dark') {
+                document.body.classList.remove('light-mode');
+                document.getElementById('themeToggle').textContent = '☀️';
+            }
+        })();
+    </script>
+</body>
+</html>
